@@ -1,8 +1,9 @@
+use shogi::Move;
 use bytes::{Bytes, BytesMut, BufMut};
 use gift::{block, Encoder};
 use ndarray::{s, ArrayViewMut2};
-use shakmaty::uci::Uci;
-use shakmaty::{Bitboard, Board};
+use shogi::{Bitboard, Position, PieceType, Color};
+use shogi::bitboard::Factory;
 use std::iter::FusedIterator;
 use std::vec;
 use rusttype::Scale;
@@ -17,16 +18,16 @@ enum RenderState {
 }
 
 struct PlayerBars {
-    white: PlayerName,
     black: PlayerName,
+    white: PlayerName,
 }
 
 impl PlayerBars {
-    fn from(white: Option<PlayerName>, black: Option<PlayerName>) -> Option<PlayerBars> {
-        if white.is_some() || black.is_some() {
+    fn from(black: Option<PlayerName>, white: Option<PlayerName>) -> Option<PlayerBars> {
+        if black.is_some() || white.is_some() {
             Some(PlayerBars {
-                white: white.unwrap_or_default(),
                 black: black.unwrap_or_default(),
+                white: white.unwrap_or_default(),
             })
         } else {
             None
@@ -35,24 +36,38 @@ impl PlayerBars {
 }
 
 #[derive(Default)]
+#[derive(Debug)]
 struct RenderFrame {
-    board: Board,
-    highlighted: Bitboard,
+    sfen: String,
     checked: Bitboard,
+    highlighted: Bitboard,
     delay: Option<u16>,
 }
 
 impl RenderFrame {
     fn diff(&self, prev: &RenderFrame) -> Bitboard {
+        Factory::init();
+        let mut prev_pos = Position::new();
+        prev_pos.set_sfen(&prev.sfen).unwrap();
+        let mut cur_pos = Position::new();
+        cur_pos.set_sfen(&self.sfen).unwrap();
         (prev.checked ^ self.checked) |
         (prev.highlighted ^ self.highlighted) |
-        (prev.board.white() ^ self.board.white()) |
-        (prev.board.pawns() ^ self.board.pawns()) |
-        (prev.board.knights() ^ self.board.knights()) |
-        (prev.board.bishops() ^ self.board.bishops()) |
-        (prev.board.rooks() ^ self.board.rooks()) |
-        (prev.board.queens() ^ self.board.queens()) |
-        (prev.board.kings() ^ self.board.kings())
+        (prev_pos.player_bb(Color::Black) ^ cur_pos.player_bb(Color::Black)) |
+        (prev_pos.piece_bb(PieceType::Pawn) ^ cur_pos.piece_bb(PieceType::Pawn)) |
+        (prev_pos.piece_bb(PieceType::Lance) ^ cur_pos.piece_bb(PieceType::Lance)) |
+        (prev_pos.piece_bb(PieceType::Knight) ^ cur_pos.piece_bb(PieceType::Knight)) |
+        (prev_pos.piece_bb(PieceType::Silver) ^ cur_pos.piece_bb(PieceType::Silver)) |
+        (prev_pos.piece_bb(PieceType::Gold) ^ cur_pos.piece_bb(PieceType::Gold)) |
+        (prev_pos.piece_bb(PieceType::Bishop) ^ cur_pos.piece_bb(PieceType::Bishop)) |
+        (prev_pos.piece_bb(PieceType::Rook) ^ cur_pos.piece_bb(PieceType::Rook)) |
+        (prev_pos.piece_bb(PieceType::King) ^ cur_pos.piece_bb(PieceType::King)) |
+        (prev_pos.piece_bb(PieceType::ProPawn) ^ cur_pos.piece_bb(PieceType::ProPawn)) |
+        (prev_pos.piece_bb(PieceType::ProLance) ^ cur_pos.piece_bb(PieceType::ProLance)) |
+        (prev_pos.piece_bb(PieceType::ProKnight) ^ cur_pos.piece_bb(PieceType::ProKnight)) |
+        (prev_pos.piece_bb(PieceType::ProSilver) ^ cur_pos.piece_bb(PieceType::ProSilver)) |
+        (prev_pos.piece_bb(PieceType::ProBishop) ^ cur_pos.piece_bb(PieceType::ProBishop)) |
+        (prev_pos.piece_bb(PieceType::ProRook) ^ cur_pos.piece_bb(PieceType::ProRook))
     }
 }
 
@@ -69,18 +84,18 @@ pub struct Render {
 
 impl Render {
     pub fn new_image(theme: &'static Theme, params: RequestParams) -> Render {
-        let bars = params.white.is_some() || params.black.is_some();
+        let bars = params.black.is_some() || params.white.is_some();
         Render {
             theme,
             buffer: vec![0; theme.height(bars) * theme.width()],
             state: RenderState::Preamble,
             comment: params.comment,
-            bars: PlayerBars::from(params.white, params.black),
+            bars: PlayerBars::from(params.black, params.white),
             orientation: params.orientation,
             frames: vec![RenderFrame {
+                sfen: params.sfen,
                 highlighted: highlight_uci(params.last_move),
-                checked: params.check.to_square(&params.fen).into_iter().collect(),
-                board: params.fen.board,
+                checked: params.check.to_square().map(|sq| Bitboard::from_square(sq)).unwrap_or(Bitboard::empty()),
                 delay: None,
             }].into_iter(),
             kork: false,
@@ -88,19 +103,20 @@ impl Render {
     }
 
     pub fn new_animation(theme: &'static Theme, params: RequestBody) -> Render {
-        let bars = params.white.is_some() || params.black.is_some();
+        let bars = params.black.is_some() || params.white.is_some();
         let default_delay = params.delay;
+
         Render {
             theme,
             buffer: vec![0; theme.height(bars) * theme.width()],
             state: RenderState::Preamble,
             comment: params.comment,
-            bars: PlayerBars::from(params.white, params.black),
+            bars: PlayerBars::from(params.black, params.white),
             orientation: params.orientation,
             frames: params.frames.into_iter().map(|frame| RenderFrame {
+                sfen: frame.sfen,
                 highlighted: highlight_uci(frame.last_move),
-                checked: frame.check.to_square(&frame.fen).into_iter().collect(),
-                board: frame.fen.board,
+                checked: frame.check.to_square().map(|sq| Bitboard::from_square(sq)).unwrap_or(Bitboard::empty()),
                 delay: Some(frame.delay.unwrap_or(default_delay)),
             }).collect::<Vec<_>>().into_iter(),
             kork: true,
@@ -118,7 +134,7 @@ impl Iterator for Render {
                 let mut blocks = Encoder::new(&mut output).into_block_enc();
 
                 blocks.encode(block::Header::default()).expect("enc header");
-
+                
                 blocks.encode(
                     block::LogicalScreenDesc::default()
                         .with_screen_height(self.theme.height(self.bars.is_some()) as u16)
@@ -150,12 +166,12 @@ impl Iterator for Render {
                     render_bar(
                         view.slice_mut(s!(..self.theme.bar_height(), ..)),
                         self.theme,
-                        self.orientation.fold(&bars.black, &bars.white));
+                        self.orientation.fold(&bars.white, &bars.black));
 
                     render_bar(
                         view.slice_mut(s!((self.theme.bar_height() + self.theme.width()).., ..)),
                         self.theme,
-                        self.orientation.fold(&bars.white, &bars.black));
+                        self.orientation.fold(&bars.black, &bars.white));
 
                     view.slice_mut(s!(self.theme.bar_height()..(self.theme.bar_height() + self.theme.width()), ..))
                 } else {
@@ -261,7 +277,8 @@ impl Iterator for Render {
 impl FusedIterator for Render { }
 
 fn render_diff(buffer: &mut [u8], theme: &Theme, orientation: Orientation, prev: Option<&RenderFrame>, frame: &RenderFrame) -> ((usize, usize), (usize, usize)) {
-    let diff = prev.map_or(Bitboard::ALL, |p| p.diff(frame));
+    Factory::init();
+    let diff = prev.map_or(Factory::all(), |p| p.diff(frame));
 
     let x_min = diff.into_iter().map(|sq| orientation.x(sq)).min().unwrap_or(0);
     let y_min = diff.into_iter().map(|sq| orientation.y(sq)).min().unwrap_or(0);
@@ -277,14 +294,15 @@ fn render_diff(buffer: &mut [u8], theme: &Theme, orientation: Orientation, prev:
         view.fill(theme.transparent_color());
     }
 
+    let mut pos = Position::new();
+    pos.set_sfen(&frame.sfen).unwrap();
     for sq in diff {
         let key = SpriteKey {
-            piece: frame.board.piece_at(sq),
-            dark_square: sq.is_dark(),
-            highlight: frame.highlighted.contains(sq),
-            check: frame.checked.contains(sq),
+            piece: *pos.piece_at(sq),
+            orientation: orientation,
+            highlight: frame.highlighted.is_occupied(sq),
+            check: frame.checked.is_occupied(sq),
         };
-
         let left = (orientation.x(sq) - x_min) * theme.square();
         let top = (orientation.y(sq) - y_min) * theme.square();
 
@@ -303,7 +321,7 @@ fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {
     if player_name.starts_with("BOT ") {
         text_color = theme.bot_color();
     } else {
-        for title in &["GM ", "WGM ", "IM ", "WIM ", "FM ", "WFM ", "NM ", "CM ", "WCM ", "WNM ", "LM ", "BOT "] {
+        for title in &["GM ", "BOT "] {
             if player_name.starts_with(title) {
                 text_color = theme.gold_color();
                 break;
@@ -343,10 +361,10 @@ fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {
     }
 }
 
-fn highlight_uci(uci: Option<Uci>) -> Bitboard {
-    match uci {
-        Some(Uci::Normal { from, to, .. }) => Bitboard::from(from) | Bitboard::from(to),
-        Some(Uci::Put { to, .. }) => Bitboard::from(to),
-        _ => Bitboard::EMPTY,
+fn highlight_uci(m: Option<Move>) -> Bitboard {
+    match m {
+        Some(Move::Normal { from, to, .. }) => Bitboard::from_square(from) | Bitboard::from_square(to),
+        Some(Move::Drop { to, .. }) => Bitboard::from_square(to),
+        _ => Bitboard::empty(),
     }
 }

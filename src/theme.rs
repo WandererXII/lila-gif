@@ -1,31 +1,72 @@
 use gift::block::{ColorTableConfig, GlobalColorTable};
 use ndarray::{s, Array2, ArrayView2};
 use rusttype::Font;
-use shakmaty::{Piece, Role};
+use shogi::{Piece, PieceType, Color};
+
+use crate::api::Orientation;
 
 const SQUARE: usize = 90;
 const COLOR_WIDTH: usize = 90 * 2 / 3;
 
 pub struct SpriteKey {
     pub piece: Option<Piece>,
-    pub dark_square: bool,
+    pub orientation: Orientation,
     pub highlight: bool,
     pub check: bool,
 }
 
+// WIP only, make it nicer
 impl SpriteKey {
     fn x(&self) -> usize {
-        (if self.piece.map_or(false, |p| p.color.is_white()) { 4 } else { 0 }) +
-        (if self.highlight { 2 } else { 0 }) +
-        (if self.dark_square { 1 } else { 0 })
+        let mx = match self.piece {
+            Some(piece) if piece.piece_type == PieceType::King => 0,
+            Some(piece) if piece.piece_type == PieceType::Rook => 0,
+            Some(piece) if piece.piece_type == PieceType::Bishop => 0,
+            Some(piece) if piece.piece_type == PieceType::Gold => 0,
+            Some(piece) if piece.piece_type == PieceType::Silver => 1,
+            Some(piece) if piece.piece_type == PieceType::Knight => 1,
+            Some(piece) if piece.piece_type == PieceType::Lance => 1,
+            Some(piece) if piece.piece_type == PieceType::Pawn => 1,
+            Some(piece) if piece.piece_type == PieceType::ProRook => 2,
+            Some(piece) if piece.piece_type == PieceType::ProBishop => 2,
+            Some(piece) if piece.piece_type == PieceType::ProSilver => 2,
+            Some(piece) if piece.piece_type == PieceType::ProKnight => 3,
+            Some(piece) if piece.piece_type == PieceType::ProLance => 3,
+            Some(piece) if piece.piece_type == PieceType::ProPawn => 3,
+            Some(_) => 3,
+            None => 2
+        };
+        2 * mx + if self.highlight && self.piece.is_some() { 1 } else { 0 }
     }
 
     fn y(&self) -> usize {
-        match self.piece {
-            Some(piece) if self.check && piece.role == Role::King => 7,
-            Some(piece) => piece.role as usize,
-            None => 0,
-        }
+        let my = match self.piece {
+            Some(piece) if piece.piece_type == PieceType::King => 3,
+            Some(piece) if piece.piece_type == PieceType::Rook => 2,
+            Some(piece) if piece.piece_type == PieceType::Bishop => 1,
+            Some(piece) if piece.piece_type == PieceType::Gold => 0,
+            Some(piece) if piece.piece_type == PieceType::Silver => 3,
+            Some(piece) if piece.piece_type == PieceType::Knight => 2,
+            Some(piece) if piece.piece_type == PieceType::Lance => 1,
+            Some(piece) if piece.piece_type == PieceType::Pawn => 0,
+            Some(piece) if piece.piece_type == PieceType::ProRook => 3,
+            Some(piece) if piece.piece_type == PieceType::ProBishop => 2,
+            Some(piece) if piece.piece_type == PieceType::ProSilver => 1,
+            Some(piece) if piece.piece_type == PieceType::ProKnight => 3,
+            Some(piece) if piece.piece_type == PieceType::ProLance => 2,
+            Some(piece) if piece.piece_type == PieceType::ProPawn => 1,
+            Some(_) => 2,
+            None => 0
+        };
+        let mc = match self.piece {
+            Some(piece) if
+                (piece.color == Color::White && self.orientation == Orientation::Black ||
+                    piece.color == Color::Black && self.orientation == Orientation::White) => 1,
+            Some(_) => 0,
+            None if self.highlight => 0,
+            None => 1
+        };
+        2 * my + mc
     }
 }
 
@@ -38,11 +79,11 @@ pub struct Theme {
 
 impl Theme {
     pub fn new() -> Theme {
-        let sprite_data = include_bytes!("../theme/sprite.gif") as &[u8];
+        let sprite_data = include_bytes!("../theme/sprite_new2.gif") as &[u8];
         let mut decoder = gift::Decoder::new(std::io::Cursor::new(sprite_data)).into_frames();
         let preamble = decoder.preamble().expect("decode preamble").expect("preamble");
         let frame = decoder.next().expect("frame").expect("decode frame");
-        let sprite = Array2::from_shape_vec((SQUARE * 8, SQUARE * 8), frame.image_data.data().to_owned()).expect("from shape");
+        let sprite = Array2::from_shape_vec((SQUARE * 9, SQUARE * 9), frame.image_data.data().to_owned()).expect("from shape");
 
         let font_data = include_bytes!("../theme/NotoSans-Regular.ttf") as &[u8];
         let font = Font::try_from_bytes(font_data).expect("parse font");
@@ -68,27 +109,27 @@ impl Theme {
     }
 
     pub fn bar_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 4)]
+        self.sprite[(0, SQUARE * 5)]
     }
 
     pub fn text_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 4 + COLOR_WIDTH)]
+        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH)]
     }
 
     pub fn gold_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 4 + COLOR_WIDTH * 2)]
+        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 2)]
     }
 
     pub fn bot_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 4 + COLOR_WIDTH * 3)]
+        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 3)]
     }
 
     pub fn med_text_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 4 + COLOR_WIDTH * 4)]
+        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 4)]
     }
 
     pub fn transparent_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 4 + COLOR_WIDTH * 5)]
+        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 5)]
     }
 
     pub fn square(&self) -> usize {
@@ -96,7 +137,7 @@ impl Theme {
     }
 
     pub fn width(&self) -> usize {
-        self.square() * 8
+        self.square() * 9
     }
 
     pub fn bar_height(&self) -> usize {
@@ -112,8 +153,10 @@ impl Theme {
     }
 
     pub fn sprite(&self, key: SpriteKey) -> ArrayView2<u8> {
-        let y = key.y();
+        //println!("{:?}", key.piece);
+        let y = key.y() % 9;
         let x = key.x();
+        //println!("{:?}", y);
         self.sprite.slice(s!((SQUARE * y)..(SQUARE + SQUARE * y), (SQUARE * x)..(SQUARE + SQUARE * x)))
     }
 }
