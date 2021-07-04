@@ -1,7 +1,7 @@
 use arrayvec::ArrayString;
 use serde::{de, Deserialize};
 use serde_with::{serde_as, DisplayFromStr};
-use shogi::{Position, Square, Move};
+use shogi::{Position, Square, Move, Color, Piece};
 use shogi::bitboard::Factory as BBFactory;
 use std::fmt;
 
@@ -28,12 +28,23 @@ impl Orientation {
         }
     }
 
+    pub fn eq_color(self, color: Color) -> bool {
+        match self {
+            Orientation::Black => color == Color::Black,
+            Orientation::White => color == Color::White,
+        }
+    }
+
     pub fn x(self, square: Square) -> usize {
         self.fold(8 - usize::from(square.file()), usize::from(square.file()))
     }
 
     pub fn y(self, square: Square) -> usize {
         self.fold(usize::from(square.rank()), 8 - usize::from(square.rank()))
+    }
+
+    pub fn hand_y(self, piece: Piece) -> usize {
+        if self.eq_color(piece.color) { 9 - piece.piece_type as usize } else { piece.piece_type as usize - 1 }
     }
 }
 
@@ -186,7 +197,7 @@ impl RequestBody {
             black: Some(PlayerName::from("Sente").unwrap()),
             white: Some(PlayerName::from("Gote").unwrap()),
             orientation: Orientation::Black,
-            delay: 50,
+            delay: 75,
             frames: frames,
         }
     }

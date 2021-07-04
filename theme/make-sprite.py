@@ -11,10 +11,32 @@ COLORS = [
     "#bf811d", # title color
     "#b72fc6", # bot color
     "#706f6e", # 50% text color on dark background
+    "#6b6b6b", # pocket background color
+    "#ffffff", # white text
 ]
 
+PIECES_NAMES = {
+    0:  "king",
+    1:  "rook",
+    2:  "bishop",
+    3:  "gold",
+    4:  "silver",
+    5:  "knight",
+    6:  "lance",
+    7:  "pawn",
+    8:  "dragon",
+    9:  "horse",
+    10: "prosilver",
+    11: "proknight",
+    12: "prolance",
+    13: "tokin",
+    14: "tama"
+}
+
+HAND_PIECES = ["pawn", "lance", "knight", "silver", "gold", "bishop", "rook"]
+
 SQUARE_SIZE = 100
-COLOR_WIDTH = SQUARE_SIZE * 2 // 3
+COLOR_WIDTH = SQUARE_SIZE
 
 
 def make_sprite(f):
@@ -22,64 +44,70 @@ def make_sprite(f):
         "xmlns": "http://www.w3.org/2000/svg",
         "version": "1.1",
         "xmlns:xlink": "http://www.w3.org/1999/xlink",
-        "viewBox": f"0 0 {SQUARE_SIZE * 9} {SQUARE_SIZE * 9}",
+        "viewBox": f"0 0 {SQUARE_SIZE * 12} {SQUARE_SIZE * 9}",
     })
 
     defs = ET.SubElement(svg, "defs")
     defs.append(ET.fromstring(TP.PIECE_BACKGROUND))
     for g in TP.PIECES.values():
         defs.append(ET.fromstring(g))
-    #defs.append(ET.fromstring(TP.PIECES['K']))
-    #defs.append(ET.fromstring(TP.PIECES['P']))
 
     defs.append(ET.fromstring(chess.svg.CHECK_GRADIENT))
 
     for x, color in enumerate(COLORS[2:]):
         ET.SubElement(svg, "rect", {
-            "x": str(SQUARE_SIZE * 5 + COLOR_WIDTH * x),
+            "x": str(COLOR_WIDTH * x),
             "y": "0",
             "width": str(COLOR_WIDTH),
             "height": str(SQUARE_SIZE),
             "stroke": "none",
             "fill": color,
         })
+        
+    ET.SubElement(svg, "rect", {
+        "x": str(SQUARE_SIZE * 8),
+        "y": str(SQUARE_SIZE * 2),
+        "width": str(SQUARE_SIZE * 4),
+        "height": str(7 * SQUARE_SIZE),
+        "stroke": "#6b6b6b",
+        "fill": "#6b6b6b",
+    })
 
-    PIECES_NAMES = {
-        0: "gold",
-        1: "pawn",
-        2: "",
-        3: "",
-        4: "bishop",
-        5: "lance",
-        6: "prosilver",
-        7: "tokin",
-        8: "rook",
-        9: "knight",
-        10: "horse",
-        11: "prolance",
-        12: "king",
-        13: "silver",
-        14: "dragon",
-        15: "proknight",
-    }
+    for x in range(4):
+        for y, piece in enumerate(HAND_PIECES):
+            color = "white" if x % 2 else "black"
+            opacity = "1.0" if x > 1 else "0.1"
+            ET.SubElement(svg, "use", {
+                    "xlink:href": f"#{color}-{piece}",
+                    "transform": f"translate({SQUARE_SIZE * (8 + x)}, {SQUARE_SIZE * (y + 2)})",
+                    "opacity": opacity,
+                    "x": "0",
+                    "y": "0"
+                })
+            if x > 1:
+                ET.SubElement(svg, "rect", {
+                    "transform": f"translate({SQUARE_SIZE * (8 + x) + (SQUARE_SIZE * 2 / 3)}, {SQUARE_SIZE * (y + 2) + (SQUARE_SIZE * 2 / 3)})",
+                    "width": str(SQUARE_SIZE / 3),
+                    "height": str(SQUARE_SIZE / 3),
+                    "stroke": "none",
+                    "rx": "10",
+                    "fill": "#d64f00",
+                })
 
-    for x in range(9):
+    for x in range(12):
         for y in range(9):
-            my_sq = y//2 * 4 + x//2
-            piece_type = my_sq if my_sq < 16 else 12
-            color = "white" if y % 2 else "black"
 
-            if y != 0 or x < 5:
+            if( y != 0 or x > 7) and (x < 8 or y < 2):
                 ET.SubElement(svg, "rect", {
                     "x": str(SQUARE_SIZE * x),
                     "y": str(SQUARE_SIZE * y),
                     "width": str(SQUARE_SIZE),
                     "height": str(SQUARE_SIZE),
                     "stroke": "#000",
-                    "fill": COLORS[1] if y == 0 and x == 4 else COLORS[x % 2],
+                    "fill": COLORS[x % 2],
                 })
 
-            if y == 8 and x != 8:
+            if y > 4 and (x == 6 or x == 7):
                 ET.SubElement(svg, "rect", {
                     "x": str(SQUARE_SIZE * x),
                     "y": str(SQUARE_SIZE * y),
@@ -87,9 +115,20 @@ def make_sprite(f):
                     "height": str(SQUARE_SIZE),
                     "fill": "url(#check_gradient)",
                 })
-            if x < 8:
+            if y > 0 and x < 8:
+                my_sq = (y-1)//2 + x//2 * 4
+                piece_type = my_sq % 15
+                color = "white" if y % 2 else "black"
                 ET.SubElement(svg, "use", {
                     "xlink:href": f"#{color}-{PIECES_NAMES[piece_type]}",
+                    "transform": f"translate({SQUARE_SIZE * x}, {SQUARE_SIZE * y})",
+                    "x": "0",
+                    "y": "0"
+                })
+            elif y < 2 and (x == 8 or x == 9):
+                color = "white" if (y+1) % 2 else "black"
+                ET.SubElement(svg, "use", {
+                    "xlink:href": f"#{color}-tama",
                     "transform": f"translate({SQUARE_SIZE * x}, {SQUARE_SIZE * y})",
                     "x": "0",
                     "y": "0"
@@ -98,4 +137,4 @@ def make_sprite(f):
     f.write(ET.tostring(svg))
 
 if __name__ == "__main__":
-    make_sprite(open("sprite_new.svg", "wb"))
+    make_sprite(open("sprite.svg", "wb"))

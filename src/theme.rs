@@ -6,7 +6,22 @@ use shogi::{Piece, PieceType, Color};
 use crate::api::Orientation;
 
 const SQUARE: usize = 90;
-const COLOR_WIDTH: usize = 90 * 2 / 3;
+
+pub struct SpriteHandKey {
+    pub piece: Piece,
+    pub orientation: Orientation,
+    pub number: u8,
+}
+
+impl SpriteHandKey {
+    fn x(&self) -> usize {
+        8 + if self.orientation.eq_color(self.piece.color) { 0 } else { 1 } + if self.number > 0 { 2 } else { 0 }
+    }
+
+    fn y(&self) -> usize {
+        9 - self.piece.piece_type as usize
+    }
+}
 
 pub struct SpriteKey {
     pub piece: Option<Piece>,
@@ -15,58 +30,25 @@ pub struct SpriteKey {
     pub check: bool,
 }
 
-// WIP only, make it nicer
 impl SpriteKey {
     fn x(&self) -> usize {
         let mx = match self.piece {
-            Some(piece) if piece.piece_type == PieceType::King => 0,
-            Some(piece) if piece.piece_type == PieceType::Rook => 0,
-            Some(piece) if piece.piece_type == PieceType::Bishop => 0,
-            Some(piece) if piece.piece_type == PieceType::Gold => 0,
-            Some(piece) if piece.piece_type == PieceType::Silver => 1,
-            Some(piece) if piece.piece_type == PieceType::Knight => 1,
-            Some(piece) if piece.piece_type == PieceType::Lance => 1,
-            Some(piece) if piece.piece_type == PieceType::Pawn => 1,
-            Some(piece) if piece.piece_type == PieceType::ProRook => 2,
-            Some(piece) if piece.piece_type == PieceType::ProBishop => 2,
-            Some(piece) if piece.piece_type == PieceType::ProSilver => 2,
-            Some(piece) if piece.piece_type == PieceType::ProKnight => 3,
-            Some(piece) if piece.piece_type == PieceType::ProLance => 3,
-            Some(piece) if piece.piece_type == PieceType::ProPawn => 3,
-            Some(_) => 3,
-            None => 2
+            Some(piece) if self.check && piece.piece_type == PieceType::King => 3,
+            Some(piece) if piece.piece_type == PieceType::King && piece.color == Color::Black => 4,
+            Some(piece) => (piece.piece_type as usize) / 4,
+            None => 5
         };
-        2 * mx + if self.highlight && self.piece.is_some() { 1 } else { 0 }
+        2 * mx + if self.highlight { 1 } else { 0 }
     }
 
     fn y(&self) -> usize {
-        let my = match self.piece {
-            Some(piece) if piece.piece_type == PieceType::King => 3,
-            Some(piece) if piece.piece_type == PieceType::Rook => 2,
-            Some(piece) if piece.piece_type == PieceType::Bishop => 1,
-            Some(piece) if piece.piece_type == PieceType::Gold => 0,
-            Some(piece) if piece.piece_type == PieceType::Silver => 3,
-            Some(piece) if piece.piece_type == PieceType::Knight => 2,
-            Some(piece) if piece.piece_type == PieceType::Lance => 1,
-            Some(piece) if piece.piece_type == PieceType::Pawn => 0,
-            Some(piece) if piece.piece_type == PieceType::ProRook => 3,
-            Some(piece) if piece.piece_type == PieceType::ProBishop => 2,
-            Some(piece) if piece.piece_type == PieceType::ProSilver => 1,
-            Some(piece) if piece.piece_type == PieceType::ProKnight => 3,
-            Some(piece) if piece.piece_type == PieceType::ProLance => 2,
-            Some(piece) if piece.piece_type == PieceType::ProPawn => 1,
-            Some(_) => 2,
+        match self.piece {
+            Some(piece) if self.check && piece.piece_type == PieceType::King && piece.color == Color::Black => 5 + self.orientation.fold(1, 0),
+            Some(piece) if self.check && piece.piece_type == PieceType::King && piece.color == Color::White => 7 + self.orientation.fold(0, 1),
+            Some(piece) if piece.piece_type == PieceType::King && piece.color == Color::Black => 0 + self.orientation.fold(1, 0),
+            Some(piece) => 2 * ((piece.piece_type as usize) % 4) + if self.orientation.eq_color(piece.color) {1} else {0} + 1,
             None => 0
-        };
-        let mc = match self.piece {
-            Some(piece) if
-                (piece.color == Color::White && self.orientation == Orientation::Black ||
-                    piece.color == Color::Black && self.orientation == Orientation::White) => 1,
-            Some(_) => 0,
-            None if self.highlight => 0,
-            None => 1
-        };
-        2 * my + mc
+        }
     }
 }
 
@@ -79,11 +61,11 @@ pub struct Theme {
 
 impl Theme {
     pub fn new() -> Theme {
-        let sprite_data = include_bytes!("../theme/sprite_new2.gif") as &[u8];
+        let sprite_data = include_bytes!("../theme/sprite.gif") as &[u8];
         let mut decoder = gift::Decoder::new(std::io::Cursor::new(sprite_data)).into_frames();
         let preamble = decoder.preamble().expect("decode preamble").expect("preamble");
         let frame = decoder.next().expect("frame").expect("decode frame");
-        let sprite = Array2::from_shape_vec((SQUARE * 9, SQUARE * 9), frame.image_data.data().to_owned()).expect("from shape");
+        let sprite = Array2::from_shape_vec((SQUARE * 9, SQUARE * 12), frame.image_data.data().to_owned()).expect("from shape");
 
         let font_data = include_bytes!("../theme/NotoSans-Regular.ttf") as &[u8];
         let font = Font::try_from_bytes(font_data).expect("parse font");
@@ -109,35 +91,55 @@ impl Theme {
     }
 
     pub fn bar_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 5)]
+        self.sprite[(0, 0)]
     }
 
     pub fn text_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH)]
+        self.sprite[(0, SQUARE)]
     }
 
     pub fn gold_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 2)]
+        self.sprite[(0, SQUARE * 2)]
     }
 
     pub fn bot_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 3)]
+        self.sprite[(0, SQUARE * 3)]
     }
 
     pub fn med_text_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 4)]
+        self.sprite[(0, SQUARE * 4)]
+    }
+
+    pub fn hand_color(&self) -> u8 {
+        self.sprite[(0, SQUARE * 5)]
+    }
+
+    pub fn white_color(&self) -> u8 {
+        self.sprite[(0, SQUARE * 6)]
     }
 
     pub fn transparent_color(&self) -> u8 {
-        self.sprite[(0, SQUARE * 5 + COLOR_WIDTH * 5)]
+        self.sprite[(0, SQUARE * 7)]
     }
 
     pub fn square(&self) -> usize {
         SQUARE
     }
 
-    pub fn width(&self) -> usize {
+    pub fn hand_width(&self) -> usize {
+        self.square() + self.square() / 2
+    }
+
+    pub fn hand_offset(&self) -> usize {
+        self.square() / 3
+    }
+
+    pub fn board_width(&self) -> usize {
         self.square() * 9
+    }
+
+    pub fn width(&self) -> usize {
+        self.square() * 12
     }
 
     pub fn bar_height(&self) -> usize {
@@ -146,17 +148,21 @@ impl Theme {
 
     pub fn height(&self, bars: bool) -> usize {
         if bars {
-            self.width() + 2 * self.bar_height()
+            self.square() * 9 + 2 * self.bar_height()
         } else {
-            self.width()
+            self.square() * 9
         }
     }
 
     pub fn sprite(&self, key: SpriteKey) -> ArrayView2<u8> {
-        //println!("{:?}", key.piece);
         let y = key.y() % 9;
-        let x = key.x();
-        //println!("{:?}", y);
+        let x = key.x() % 12;
         self.sprite.slice(s!((SQUARE * y)..(SQUARE + SQUARE * y), (SQUARE * x)..(SQUARE + SQUARE * x)))
+    }
+
+    pub fn hand_sprite(&self, key: SpriteHandKey) -> ArrayView2<u8> {
+        let y = key.y() % 9;
+        let x = key.x() % 12;
+        self.sprite.slice(s!((SQUARE * y + 1)..(SQUARE + SQUARE * y), (SQUARE * x + 1)..(SQUARE + SQUARE * x)))
     }
 }

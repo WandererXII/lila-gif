@@ -2,14 +2,14 @@ use shogi::Move;
 use bytes::{Bytes, BytesMut, BufMut};
 use gift::{block, Encoder};
 use ndarray::{s, ArrayViewMut2};
-use shogi::{Bitboard, Position, PieceType, Color};
+use shogi::{Bitboard, Position, PieceType, Color, Piece};
 use shogi::bitboard::Factory;
 use std::iter::FusedIterator;
 use std::vec;
 use rusttype::Scale;
 
 use crate::api::{Comment, Orientation, PlayerName, RequestBody, RequestParams};
-use crate::theme::{SpriteKey, Theme};
+use crate::theme::{SpriteKey, Theme, SpriteHandKey};
 
 enum RenderState {
     Preamble,
@@ -51,8 +51,8 @@ impl RenderFrame {
         prev_pos.set_sfen(&prev.sfen).unwrap();
         let mut cur_pos = Position::new();
         cur_pos.set_sfen(&self.sfen).unwrap();
-        (prev.checked ^ self.checked) |
-        (prev.highlighted ^ self.highlighted) |
+        (&prev.checked ^ &self.checked) |
+        (&prev.highlighted ^ &self.highlighted) |
         (prev_pos.player_bb(Color::Black) ^ cur_pos.player_bb(Color::Black)) |
         (prev_pos.piece_bb(PieceType::Pawn) ^ cur_pos.piece_bb(PieceType::Pawn)) |
         (prev_pos.piece_bb(PieceType::Lance) ^ cur_pos.piece_bb(PieceType::Lance)) |
@@ -68,6 +68,25 @@ impl RenderFrame {
         (prev_pos.piece_bb(PieceType::ProSilver) ^ cur_pos.piece_bb(PieceType::ProSilver)) |
         (prev_pos.piece_bb(PieceType::ProBishop) ^ cur_pos.piece_bb(PieceType::ProBishop)) |
         (prev_pos.piece_bb(PieceType::ProRook) ^ cur_pos.piece_bb(PieceType::ProRook))
+    }
+
+    fn hand_diff(&self, prev: &RenderFrame) -> Vec<Piece> {
+        let mut t: Vec<Piece> = Vec::new();
+
+        let mut prev_pos = Position::new();
+        prev_pos.set_sfen(&prev.sfen).unwrap();
+        let mut cur_pos = Position::new();
+        cur_pos.set_sfen(&self.sfen).unwrap();
+
+        for pt in PieceType::iter().filter(|pt| pt.is_hand_piece()) {
+            for c in Color::iter() {
+                let piece = Piece{color: c, piece_type: pt};
+                if prev_pos.hand(piece) != cur_pos.hand(piece) {
+                    t.push(piece);
+                }
+            }
+        }
+        t
     }
 }
 
@@ -167,14 +186,20 @@ impl Iterator for Render {
                         view.slice_mut(s!(..self.theme.bar_height(), ..)),
                         self.theme,
                         self.orientation.fold(&bars.white, &bars.black));
-
                     render_bar(
-                        view.slice_mut(s!((self.theme.bar_height() + self.theme.width()).., ..)),
+                        view.slice_mut(s!((self.theme.bar_height() + self.theme.board_width()).., ..)),
                         self.theme,
                         self.orientation.fold(&bars.black, &bars.white));
-
-                    view.slice_mut(s!(self.theme.bar_height()..(self.theme.bar_height() + self.theme.width()), ..))
+                    render_hand(
+                        view.slice_mut(s!(self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width()), ..self.theme.hand_width())),
+                        self.theme);
+                    render_hand(
+                        view.slice_mut(s!(self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width()), (self.theme.hand_width() + self.theme.board_width())..)), // self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width())
+                        self.theme);
+                    view.slice_mut(s!(self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width()), ..))
                 } else {
+                    render_hand(view.slice_mut(s!(.., ..self.theme.hand_width())), self.theme);
+                    render_hand(view.slice_mut(s!(.., (self.theme.hand_width() + self.theme.board_width())..)), self.theme);
                     view
                 };
 
@@ -280,13 +305,35 @@ fn render_diff(buffer: &mut [u8], theme: &Theme, orientation: Orientation, prev:
     Factory::init();
     let diff = prev.map_or(Factory::all(), |p| p.diff(frame));
 
-    let x_min = diff.into_iter().map(|sq| orientation.x(sq)).min().unwrap_or(0);
-    let y_min = diff.into_iter().map(|sq| orientation.y(sq)).min().unwrap_or(0);
-    let x_max = diff.into_iter().map(|sq| orientation.x(sq)).max().unwrap_or(0) + 1;
-    let y_max = diff.into_iter().map(|sq| orientation.y(sq)).max().unwrap_or(0) + 1;
+    let hand_diff: Vec<Piece> = prev.map_or(Color::iter().flat_map(|c| {
+        PieceType::iter().filter(|pt| pt.is_hand_piece()).map(|pt| { 
+                Piece { piece_type: pt, color: c }
+            }).collect::<Vec<Piece>>()
+        }).collect(),
+        |p| p.hand_diff(frame));
 
-    let width = (x_max - x_min) * theme.square();
-    let height = (y_max - y_min) * theme.square();
+    let hand_left = hand_diff.iter().any(|p| !orientation.eq_color(p.color));
+    let hand_right = hand_diff.iter().any(|p| orientation.eq_color(p.color));
+
+    let x_min = if hand_left { 0 }
+    else {
+        diff.into_iter().map(|sq| orientation.x(sq) * theme.square()).min().unwrap_or(0) + theme.hand_width()
+    };
+    let x_max = if hand_right { theme.width() } else{
+        diff.into_iter().map(|sq| orientation.x(sq) * theme.square()).max().unwrap_or(0) + theme.hand_width() + theme.square()
+    };
+
+    let y_min = std::cmp::min(
+        hand_diff.iter().map(|p| orientation.hand_y(*p) * theme.square()).min().unwrap_or(9),
+        diff.into_iter().map(|sq| orientation.y(sq) * theme.square()).min().unwrap_or(0)
+    );
+    let y_max = std::cmp::max(
+        hand_diff.iter().map(|p| orientation.hand_y(*p) * theme.square()).max().unwrap_or(0) + theme.square(),
+        diff.into_iter().map(|sq| orientation.y(sq)* theme.square()).max().unwrap_or(0) + theme.square()
+    );
+
+    let width = x_max - x_min;
+    let height = y_max - y_min;
 
     let mut view = ArrayViewMut2::from_shape((height, width), buffer).expect("shape");
 
@@ -303,15 +350,72 @@ fn render_diff(buffer: &mut [u8], theme: &Theme, orientation: Orientation, prev:
             highlight: frame.highlighted.is_occupied(sq),
             check: frame.checked.is_occupied(sq),
         };
-        let left = (orientation.x(sq) - x_min) * theme.square();
-        let top = (orientation.y(sq) - y_min) * theme.square();
+        let left = theme.hand_width() + orientation.x(sq) * theme.square() - x_min;
+        let top = orientation.y(sq) * theme.square() - y_min;
 
         view.slice_mut(
             s!(top..(top + theme.square()), left..(left + theme.square()))
         ).assign(&theme.sprite(key));
     }
 
-    ((theme.square() * x_min, theme.square() * y_min), (width, height))
+    for p in hand_diff {
+        let nb = std::cmp::min(pos.hand(p), 99);
+
+        let key = SpriteHandKey {
+            piece: p,
+            orientation: orientation,
+            number: nb,
+        };
+        let left = if orientation.eq_color(p.color) { width - theme.square() - theme.hand_offset() / 2 } else { theme.hand_offset() / 2 };
+        let top = orientation.hand_y(p) * theme.square() - y_min;
+
+        // +1 to cut of border - todo fix sprite
+        view.slice_mut(
+            s!((top + 1)..(top + theme.square()), (left + 1)..(left + theme.square()))
+        ).assign(&theme.hand_sprite(key));
+
+        if nb > 0 {
+            let mut text_color = theme.white_color();
+            let font_size = 30.0;
+            let x_offset = 69;
+            let y_offset = 60;
+            let scale = Scale {
+                x: font_size,
+                y: font_size,
+            };
+            let g_text = nb.to_string();
+            let g_center = (g_text.len() - 1) as f32 * 6.0;
+            let v_metrics = theme.font().v_metrics(scale);
+            let glyphs = theme.font().layout(g_text.as_str(), scale, rusttype::point((x_offset + left) as f32 - g_center, (y_offset + top) as f32 + v_metrics.ascent));
+    
+            for g in glyphs {
+                if let Some(bb) = g.pixel_bounding_box() {
+                    g.draw(|left, top, intensity| {
+                        let left = left as i32 + bb.min.x;
+                        let top = top as i32 + bb.min.y;
+                        if 0 <= left && left < width as i32 && 0 <= top && top < height as i32 {
+                            // Poor man's anti-aliasing.
+                            if intensity < 0.01 {
+                                return;
+                            } else if intensity < 0.5 && text_color == theme.text_color() {
+                                view[(top as usize, left as usize)] = theme.med_text_color();
+                            } else {
+                                view[(top as usize, left as usize)] = text_color;
+                            }
+                        }
+                    });
+                } else {
+                    text_color = theme.text_color();
+                }
+            }
+        }
+    }
+
+    ((x_min, y_min), (width, height))
+}
+
+fn render_hand(mut view: ArrayViewMut2<u8>, theme: &Theme) {
+    view.fill(theme.hand_color());
 }
 
 fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {
@@ -337,7 +441,7 @@ fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {
     };
 
     let v_metrics = theme.font().v_metrics(scale);
-    let glyphs = theme.font().layout(player_name, scale, rusttype::point(padding, padding + v_metrics.ascent));
+    let glyphs = theme.font().layout(player_name, scale, rusttype::point(padding + theme.hand_width() as f32, padding + v_metrics.ascent));
 
     for g in glyphs {
         if let Some(bb) = g.pixel_bounding_box() {
