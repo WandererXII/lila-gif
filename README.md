@@ -1,17 +1,13 @@
-lila-gif
-========
+# lishogi-gif - WIP
 
-Webservice to render Gifs of chess positions and games, and stream them
+Fork of [lila-gif](https://github.com/niklasf/lila-gif) modified for shogi.
+
+Webservice to render Gifs of shogi positions and games, and stream them
 frame by frame.
 
-![Example: DrDrunkenstein vs. Zhigalko_Sergei](/example.gif)
+![Example](/example.gif)
 
-size | render time | frames | colors | width | height
---- | --- | --- | --- | --- | ---
-336 KiB | ~60 ms | 93 | 63 | 720 px | 840 px
-
-Usage
------
+## Usage
 
 ```
 lila-gif 0.1.0
@@ -28,24 +24,23 @@ OPTIONS:
         --port <port>          Listen on this port [default: 6175]
 ```
 
-HTTP API
---------
+## HTTP API
 
 ### `GET /image.gif`
 
 ```
-curl http://localhost:6175/image.gif?fen=4k3/6KP/8/8/8/8/7p/8 --output image.gif
+curl http://localhost:6175/image.gif?sfen=lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL_b_20B2b_1 --output image.gif
 ```
 
-name | type | default | description
---- | --- | --- | ---
-**fen** | ascii | *starting position* | FEN of the position. Board part is sufficient.
-white | utf-8 | *none* | Name of the white player. Known chess titles are highlighted. Limited to 100 bytes.
-black | utf-8 | *none* | Name of the black player. Known chess titles are highlighted. Limited to 100 bytes.
-comment | utf-8 | `https://github.com/niklasf/lila-git` | Comment to be added to GIF meta data. Limited to 255 bytes.
-lastMove | ascii | *none* | Last move in UCI notation (like `e2e4`).
-check | ascii | *none* | Square of king in check (like `e1`).
-orientation | | `white` | Pass `black` to flip the board.
+| name        | type  | default                                   | description                                                 |
+| ----------- | ----- | ----------------------------------------- | ----------------------------------------------------------- |
+| **sfen**    | ascii | _starting position_                       | SFEN of the position.                                       |
+| black       | utf-8 | _none_                                    | Name of the sente player. Limited to 100 bytes.             |
+| white       | utf-8 | _none_                                    | Name of the gote player. Limited to 100 bytes.              |
+| comment     | utf-8 | `https://github.com/WandererXII/lila-git` | Comment to be added to GIF meta data. Limited to 255 bytes. |
+| lastMove    | ascii | _none_                                    | Last move in USI notation (like `7g7f`).                    |
+| check       | ascii | _none_                                    | Square of king in check (like `5a`).                        |
+| orientation |       | `black`                                   | Pass `white` to flip the board.                             |
 
 ### `POST /game.gif`
 
@@ -53,16 +48,16 @@ orientation | | `white` | Pass `black` to flip the board.
 {
   "white": "Molinari", // optional
   "black": "Bordais", // optional
-  "comment": "https://www.chessgames.com/perl/chessgame?gid=1251038", // optional
-  "orientation": "white", // default
-  "delay": 50, // default frame delay in centiseconds
+  "comment": "lishogi.org", // optional
+  "orientation": "sente", // default
+  "delay": 75, // default frame delay in centiseconds
   "frames": [
     // [...]
     {
-      "fen": "r1bqkb1r/pp1ppppp/5n2/2p5/2P1P3/2Nn2P1/PP1PNP1P/R1BQKB1R w KQkq - 1 6",
+      "sfen": "lnsgkgsnl/1r5b1/pppppp+Bpp/6p2/9/2P6/PP1PPPPPP/7R1/LNSGKGSNL w - 4",
       "delay": 500, // optionally overwrite default delay
-      "lastMove": "b4d3", // optionally highlight last move
-      "check": "e1" // optionally highlight king
+      "lastMove": "8h3c+", // optionally highlight last move
+      "check": "5a" // optionally highlight king
     }
   ]
 }
@@ -74,10 +69,7 @@ orientation | | `white` | Pass `black` to flip the board.
 curl http://localhost:6175/example.gif --output example.gif
 ```
 
-Render an [example game](https://lichess.org/Q0iQs5Zi).
-
-Technique
----------
+## Technique
 
 Instead of rendering vector graphics at runtime, all pieces are prerendered
 on every possible background. This allows preparing a minimal color palette
@@ -94,8 +86,7 @@ background. The example below is the last frame of the animation.
 
 ![Example frame](/example-frame.gif)
 
-License
--------
+## License
 
 lila-gif is licensed under the GNU Affero General Public License, version 3 or
 any later version, at your option.
