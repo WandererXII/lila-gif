@@ -26,4 +26,4 @@ gift = "0.10"
 tokio-stream = "0.1"
 
 [patch.crates-io]
-shogi = { path = "../shogi-rs" }
+shogi = { git  = "https://github.com/WandererXII/shogi-rs" }
