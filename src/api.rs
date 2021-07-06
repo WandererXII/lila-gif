@@ -164,7 +164,7 @@ pub struct RequestFrame {
 
 impl RequestBody {
     pub fn example() -> RequestBody {
-        let moves = "1. 7g7f 2. 3c3d 3. 8h2b+ 4. 3a2b 5. B*3c";
+        let moves = "7g7f 4c4d 8i7g 3c3d 7g6e 2b3c 6e5c+ 3d3e 5c6c 4d4e 8h3c+ 2a3c B*6f 8b4b 6f3c+ 7c7d N*4d B*1e 6c5b 6a5b 4d5b+ 4a5b 3c1a N*3b 1g1f 1e2d G*1e 4b4a 1e2d 2c2d L*6f 3a4b B*9e 5b6b 6f6c+ 4a1a 5g5f B*5d 2h7h 5d6c 7f7e 9c9d 9e7g 9d9e 7g1a+ 6c5b 7e7d 6b6c R*5e L*5c 5e4e N*3c 4e3e G*4d 3e8e 7a7b 1a1b 1c1d 1b2c 5a4a 2c1d 4b3a 1d1e 4d4e 5i4h 5c5f P*5g P*5a 5g5f 4e5f L*4f P*4b P*5g 5f6g 4f4b+ 3a4b 7h7f L*1a 1e2f 8a9c 8e6e P*6d 6e6g 3b4d 2f4d 5b2e 7f4f 6c7d 4d3c P*3a 3c2d 2e4c G*4d 7d7c 4d4c 4b4c 4f4c+ G*4b 2d4b";
 
         let mut frames = Vec::with_capacity(46 * 2 + 1);
         frames.push(RequestFrame {sfen: "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1".to_string(), ..Default::default()});
