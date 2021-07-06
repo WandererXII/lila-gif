@@ -1,6 +1,6 @@
+use clap::Clap;
 use std::convert::Infallible;
 use std::net::SocketAddr;
-use clap::Clap;
 use warp::http::status::StatusCode;
 use warp::http::Response;
 use warp::hyper::Body;
@@ -12,9 +12,8 @@ mod theme;
 
 use api::{RequestBody, RequestParams};
 use render::Render;
-use theme::Theme;
 use shogi::bitboard::Factory as BBFactory;
-
+use theme::Theme;
 
 #[derive(Clap)]
 struct Opt {
@@ -54,7 +53,7 @@ async fn main() {
     let bind = SocketAddr::new(opt.address.parse().expect("valid address"), opt.port);
 
     let theme: &'static Theme = Box::leak(Box::new(Theme::new()));
-    
+
     BBFactory::init();
 
     let image_route = warp::path!("image.gif")

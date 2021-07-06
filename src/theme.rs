@@ -1,7 +1,7 @@
 use gift::block::{ColorTableConfig, GlobalColorTable};
 use ndarray::{s, Array2, ArrayView2};
 use rusttype::Font;
-use shogi::{Piece, PieceType, Color};
+use shogi::{Color, Piece, PieceType};
 
 use crate::api::Orientation;
 
@@ -15,7 +15,11 @@ pub struct SpriteHandKey {
 
 impl SpriteHandKey {
     fn x(&self) -> usize {
-        8 + if self.orientation.eq_color(self.piece.color) { 0 } else { 1 } + if self.number > 0 { 2 } else { 0 }
+        8 + if self.orientation.eq_color(self.piece.color) {
+            0
+        } else {
+            1
+        } + if self.number > 0 { 2 } else { 0 }
     }
 
     fn y(&self) -> usize {
@@ -36,18 +40,26 @@ impl SpriteKey {
             Some(piece) if self.check && piece.piece_type == PieceType::King => 3,
             Some(piece) if piece.piece_type == PieceType::King && piece.color == Color::Black => 4,
             Some(piece) => (piece.piece_type as usize) / 4,
-            None => 5
+            None => 5,
         };
         2 * mx + if self.highlight { 1 } else { 0 }
     }
 
     fn y(&self) -> usize {
         match self.piece {
-            Some(piece) if self.check && piece.piece_type == PieceType::King && piece.color == Color::Black => 5 + self.orientation.fold(1, 0),
-            Some(piece) if self.check && piece.piece_type == PieceType::King && piece.color == Color::White => 7 + self.orientation.fold(0, 1),
-            Some(piece) if piece.piece_type == PieceType::King && piece.color == Color::Black => 0 + self.orientation.fold(1, 0),
-            Some(piece) => 2 * ((piece.piece_type as usize) % 4) + if self.orientation.eq_color(piece.color) {1} else {0} + 1,
-            None => 0
+            Some(piece) if self.check && piece.piece_type == PieceType::King && piece.color == Color::Black => {
+                5 + self.orientation.fold(1, 0)
+            }
+            Some(piece) if self.check && piece.piece_type == PieceType::King && piece.color == Color::White => {
+                7 + self.orientation.fold(0, 1)
+            }
+            Some(piece) if piece.piece_type == PieceType::King && piece.color == Color::Black => {
+                0 + self.orientation.fold(1, 0)
+            }
+            Some(piece) => {
+                2 * ((piece.piece_type as usize) % 4) + if self.orientation.eq_color(piece.color) { 1 } else { 0 } + 1
+            }
+            None => 0,
         }
     }
 }
@@ -65,7 +77,8 @@ impl Theme {
         let mut decoder = gift::Decoder::new(std::io::Cursor::new(sprite_data)).into_frames();
         let preamble = decoder.preamble().expect("decode preamble").expect("preamble");
         let frame = decoder.next().expect("frame").expect("decode frame");
-        let sprite = Array2::from_shape_vec((SQUARE * 9, SQUARE * 12), frame.image_data.data().to_owned()).expect("from shape");
+        let sprite =
+            Array2::from_shape_vec((SQUARE * 9, SQUARE * 12), frame.image_data.data().to_owned()).expect("from shape");
 
         let font_data = include_bytes!("../theme/NotoSans-Regular.ttf") as &[u8];
         let font = Font::try_from_bytes(font_data).expect("parse font");
@@ -157,12 +170,18 @@ impl Theme {
     pub fn sprite(&self, key: SpriteKey) -> ArrayView2<u8> {
         let y = key.y() % 9;
         let x = key.x() % 12;
-        self.sprite.slice(s!((SQUARE * y)..(SQUARE + SQUARE * y), (SQUARE * x)..(SQUARE + SQUARE * x)))
+        self.sprite.slice(s!(
+            (SQUARE * y)..(SQUARE + SQUARE * y),
+            (SQUARE * x)..(SQUARE + SQUARE * x)
+        ))
     }
 
     pub fn hand_sprite(&self, key: SpriteHandKey) -> ArrayView2<u8> {
         let y = key.y() % 9;
         let x = key.x() % 12;
-        self.sprite.slice(s!((SQUARE * y + 1)..(SQUARE + SQUARE * y), (SQUARE * x + 1)..(SQUARE + SQUARE * x)))
+        self.sprite.slice(s!(
+            (SQUARE * y + 1)..(SQUARE + SQUARE * y),
+            (SQUARE * x + 1)..(SQUARE + SQUARE * x)
+        ))
     }
 }
