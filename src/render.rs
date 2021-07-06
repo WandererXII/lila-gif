@@ -46,7 +46,6 @@ struct RenderFrame {
 
 impl RenderFrame {
     fn diff(&self, prev: &RenderFrame) -> Bitboard {
-        Factory::init();
         let mut prev_pos = Position::new();
         prev_pos.set_sfen(&prev.sfen).unwrap();
         let mut cur_pos = Position::new();
@@ -302,7 +301,6 @@ impl Iterator for Render {
 impl FusedIterator for Render { }
 
 fn render_diff(buffer: &mut [u8], theme: &Theme, orientation: Orientation, prev: Option<&RenderFrame>, frame: &RenderFrame) -> ((usize, usize), (usize, usize)) {
-    Factory::init();
     let diff = prev.map_or(Factory::all(), |p| p.diff(frame));
 
     let hand_diff: Vec<Piece> = prev.map_or(Color::iter().flat_map(|c| {

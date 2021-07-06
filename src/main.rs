@@ -13,6 +13,8 @@ mod theme;
 use api::{RequestBody, RequestParams};
 use render::Render;
 use theme::Theme;
+use shogi::bitboard::Factory as BBFactory;
+
 
 #[derive(Clap)]
 struct Opt {
@@ -52,6 +54,8 @@ async fn main() {
     let bind = SocketAddr::new(opt.address.parse().expect("valid address"), opt.port);
 
     let theme: &'static Theme = Box::leak(Box::new(Theme::new()));
+    
+    BBFactory::init();
 
     let image_route = warp::path!("image.gif")
         .and(warp::get())

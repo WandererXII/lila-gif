@@ -2,7 +2,6 @@ use arrayvec::ArrayString;
 use serde::{de, Deserialize};
 use serde_with::{serde_as, DisplayFromStr};
 use shogi::{Position, Square, Move, Color, Piece};
-use shogi::bitboard::Factory as BBFactory;
 use std::fmt;
 
 
@@ -170,7 +169,6 @@ impl RequestBody {
         let mut frames = Vec::with_capacity(46 * 2 + 1);
         frames.push(RequestFrame {sfen: "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1".to_string(), ..Default::default()});
 
-        BBFactory::init();
         let mut pos = Position::new();
         pos.set_sfen("lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1").unwrap();
 
