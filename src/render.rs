@@ -4,7 +4,7 @@ use ndarray::{s, ArrayViewMut2};
 use rusttype::Scale;
 use shogi::bitboard::Factory;
 use shogi::Move;
-use shogi::{Bitboard, Color, Piece, PieceType, Position};
+use shogi::{Bitboard, Color, Piece, PieceType, Position, Square};
 use std::iter::FusedIterator;
 use std::vec;
 
@@ -428,6 +428,13 @@ fn render_diff(
 
     let mut pos = Position::new();
     pos.set_sfen(&frame.sfen).unwrap();
+    let center_squares = Factory::all()
+        .filter(|sq| {
+            (sq.rank() == 2 || sq.rank() == 3 || sq.rank() == 5 || sq.rank() == 6)
+                && (sq.file() == 2 || sq.file() == 3 || sq.file() == 5 || sq.file() == 6)
+        })
+        .collect::<Vec<Square>>();
+
     for sq in diff {
         let key = SpriteKey {
             piece: *pos.piece_at(sq),
@@ -440,6 +447,28 @@ fn render_diff(
 
         view.slice_mut(s!(top..(top + theme.square()), left..(left + theme.square())))
             .assign(&theme.sprite(key));
+
+        if center_squares.contains(&sq) {
+            let top_circle = if orientation.y(sq) == 2 || orientation.y(sq) == 5 {
+                top + theme.square() - theme.circle()
+            } else {
+                top
+            };
+            let left_circle = if orientation.x(sq) == 2 || orientation.x(sq) == 5 {
+                left + theme.square() - theme.circle()
+            } else {
+                left
+            };
+            view.slice_mut(s!(
+                (top_circle)..(top_circle + theme.circle()),
+                (left_circle)..(left_circle + theme.circle())
+            ))
+            .zip_mut_with(&theme.circle_sprite(top != top_circle, left != left_circle), |x, y| {
+                if *y != theme.transparent_color() as u8 {
+                    *x = y.clone()
+                }
+            });
+        }
     }
 
     for p in hand_diff {

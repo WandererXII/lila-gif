@@ -6,6 +6,7 @@ use shogi::{Color, Piece, PieceType};
 use crate::api::Orientation;
 
 const SQUARE: usize = 90;
+const CIRCLE: usize = SQUARE / 10;
 
 pub struct SpriteHandKey {
     pub piece: Piece,
@@ -139,6 +140,10 @@ impl Theme {
         SQUARE
     }
 
+    pub fn circle(&self) -> usize {
+        CIRCLE
+    }
+
     pub fn hand_width(&self) -> usize {
         self.square() + self.square() / 2
     }
@@ -165,6 +170,15 @@ impl Theme {
         } else {
             self.square() * 9
         }
+    }
+
+    pub fn circle_sprite(&self, bottom: bool, right: bool) -> ArrayView2<u8> {
+        let circle_center_top = SQUARE + SQUARE / 2 - if bottom { self.circle() } else { 0 };
+        let circle_center_left = SQUARE * 10 + SQUARE / 2 - if right { self.circle() } else { 0 };
+        self.sprite.slice(s!(
+            (circle_center_top)..(circle_center_top + self.circle()),
+            (circle_center_left)..(circle_center_left + self.circle())
+        ))
     }
 
     pub fn sprite(&self, key: SpriteKey) -> ArrayView2<u8> {
