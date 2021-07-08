@@ -1,12 +1,12 @@
 [package]
-name = "lila-gif"
+name = "lishogi-gif"
 version = "0.1.0"
 publish = false
 description = "Webservice to render gifs of shogi positions and games"
-repository = "https://github.com/niklasf/lila-gif"
+repository = "https://github.com/WandererXII/lishogi-gif"
 readme = "README.md"
 license = "AGPL-3.0+"
-authors = ["Niklas Fiekas <niklas.fiekas@backscattering.de>", "Wanderer - modified for lishogi"]
+authors = ["Niklas Fiekas <niklas.fiekas@backscattering.de>", "WandererXII - modified for lishogi"]
 categories = ["games", "multimedia"]
 keywords = ["shogi", "gif"]
 edition = "2018"
