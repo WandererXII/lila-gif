@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 import chess.svg
 
-import pieces as TP
+import dist.pieces as TP
 
 COLORS = [
     "#fabb54", # light square
