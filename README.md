@@ -7,6 +7,10 @@ frame by frame.
 
 ![Example](/example.gif)
 
+| size    | render time | frames | colors | width   | height |
+| ------- | ----------- | ------ | ------ | ------- | ------ |
+| 668 KiB | ~55 ms      | 101    | 63     | 1080 px | 930 px |
+
 ## Usage
 
 ```
