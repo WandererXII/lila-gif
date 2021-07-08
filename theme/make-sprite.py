@@ -4,8 +4,8 @@ import chess.svg
 import pieces as TP
 
 COLORS = [
-    "#f0d9b5", # light square
-    "#ced26b", # highlighted light square
+    "#fabb54", # light square
+    "#d3bf31", # highlighted light square
     "#262421", # dark background
     "#bababa", # text color
     "#bf811d", # title color
@@ -94,16 +94,24 @@ def make_sprite(f):
                     "fill": "#d64f00",
                 })
 
+    ET.SubElement(svg, "circle", {
+        "cx": str(SQUARE_SIZE * 10 + SQUARE_SIZE / 2),
+        "cy": str(SQUARE_SIZE + SQUARE_SIZE / 2),
+        "r": str(SQUARE_SIZE / 10),
+        "fill": "#000",
+    })
+
     for x in range(12):
         for y in range(9):
 
-            if( y != 0 or x > 7) and (x < 8 or y < 2):
+            if( y != 0 or x > 7) and (x < 8 or y < 2) and not (x > 9 and y == 1):
                 ET.SubElement(svg, "rect", {
                     "x": str(SQUARE_SIZE * x),
                     "y": str(SQUARE_SIZE * y),
                     "width": str(SQUARE_SIZE),
                     "height": str(SQUARE_SIZE),
                     "stroke": "#000",
+                    "stroke-width": "2",
                     "fill": COLORS[x % 2],
                 })
 
