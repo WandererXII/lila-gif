@@ -28,6 +28,8 @@ OPTIONS:
 
 ### `GET /image.gif`
 
+![Game thumbnail](/image.gif)
+
 ```
 curl http://localhost:6175/image.gif?sfen=lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL_b_20B2b_1 --output image.gif
 ```
