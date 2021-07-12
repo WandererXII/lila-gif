@@ -37,7 +37,7 @@ impl PlayerBars {
 
 #[derive(Default, Debug)]
 struct RenderFrame {
-    sfen: String,
+    pos: Position,
     checked: Bitboard,
     highlighted: Bitboard,
     delay: Option<u16>,
@@ -45,36 +45,27 @@ struct RenderFrame {
 
 impl RenderFrame {
     fn diff(&self, prev: &RenderFrame) -> Bitboard {
-        let mut prev_pos = Position::new();
-        prev_pos.set_sfen(&prev.sfen).unwrap();
-        let mut cur_pos = Position::new();
-        cur_pos.set_sfen(&self.sfen).unwrap();
         (&prev.checked ^ &self.checked)
             | (&prev.highlighted ^ &self.highlighted)
-            | (prev_pos.player_bb(Color::Black) ^ cur_pos.player_bb(Color::Black))
-            | (prev_pos.piece_bb(PieceType::Pawn) ^ cur_pos.piece_bb(PieceType::Pawn))
-            | (prev_pos.piece_bb(PieceType::Lance) ^ cur_pos.piece_bb(PieceType::Lance))
-            | (prev_pos.piece_bb(PieceType::Knight) ^ cur_pos.piece_bb(PieceType::Knight))
-            | (prev_pos.piece_bb(PieceType::Silver) ^ cur_pos.piece_bb(PieceType::Silver))
-            | (prev_pos.piece_bb(PieceType::Gold) ^ cur_pos.piece_bb(PieceType::Gold))
-            | (prev_pos.piece_bb(PieceType::Bishop) ^ cur_pos.piece_bb(PieceType::Bishop))
-            | (prev_pos.piece_bb(PieceType::Rook) ^ cur_pos.piece_bb(PieceType::Rook))
-            | (prev_pos.piece_bb(PieceType::King) ^ cur_pos.piece_bb(PieceType::King))
-            | (prev_pos.piece_bb(PieceType::ProPawn) ^ cur_pos.piece_bb(PieceType::ProPawn))
-            | (prev_pos.piece_bb(PieceType::ProLance) ^ cur_pos.piece_bb(PieceType::ProLance))
-            | (prev_pos.piece_bb(PieceType::ProKnight) ^ cur_pos.piece_bb(PieceType::ProKnight))
-            | (prev_pos.piece_bb(PieceType::ProSilver) ^ cur_pos.piece_bb(PieceType::ProSilver))
-            | (prev_pos.piece_bb(PieceType::ProBishop) ^ cur_pos.piece_bb(PieceType::ProBishop))
-            | (prev_pos.piece_bb(PieceType::ProRook) ^ cur_pos.piece_bb(PieceType::ProRook))
+            | (prev.pos.player_bb(Color::Black) ^ self.pos.player_bb(Color::Black))
+            | (prev.pos.piece_bb(PieceType::Pawn) ^ self.pos.piece_bb(PieceType::Pawn))
+            | (prev.pos.piece_bb(PieceType::Lance) ^ self.pos.piece_bb(PieceType::Lance))
+            | (prev.pos.piece_bb(PieceType::Knight) ^ self.pos.piece_bb(PieceType::Knight))
+            | (prev.pos.piece_bb(PieceType::Silver) ^ self.pos.piece_bb(PieceType::Silver))
+            | (prev.pos.piece_bb(PieceType::Gold) ^ self.pos.piece_bb(PieceType::Gold))
+            | (prev.pos.piece_bb(PieceType::Bishop) ^ self.pos.piece_bb(PieceType::Bishop))
+            | (prev.pos.piece_bb(PieceType::Rook) ^ self.pos.piece_bb(PieceType::Rook))
+            | (prev.pos.piece_bb(PieceType::King) ^ self.pos.piece_bb(PieceType::King))
+            | (prev.pos.piece_bb(PieceType::ProPawn) ^ self.pos.piece_bb(PieceType::ProPawn))
+            | (prev.pos.piece_bb(PieceType::ProLance) ^ self.pos.piece_bb(PieceType::ProLance))
+            | (prev.pos.piece_bb(PieceType::ProKnight) ^ self.pos.piece_bb(PieceType::ProKnight))
+            | (prev.pos.piece_bb(PieceType::ProSilver) ^ self.pos.piece_bb(PieceType::ProSilver))
+            | (prev.pos.piece_bb(PieceType::ProBishop) ^ self.pos.piece_bb(PieceType::ProBishop))
+            | (prev.pos.piece_bb(PieceType::ProRook) ^ self.pos.piece_bb(PieceType::ProRook))
     }
 
     fn hand_diff(&self, prev: &RenderFrame) -> Vec<Piece> {
         let mut t: Vec<Piece> = Vec::new();
-
-        let mut prev_pos = Position::new();
-        prev_pos.set_sfen(&prev.sfen).unwrap();
-        let mut cur_pos = Position::new();
-        cur_pos.set_sfen(&self.sfen).unwrap();
 
         for pt in PieceType::iter().filter(|pt| pt.is_hand_piece()) {
             for c in Color::iter() {
@@ -82,7 +73,7 @@ impl RenderFrame {
                     color: c,
                     piece_type: pt,
                 };
-                if prev_pos.hand(piece) != cur_pos.hand(piece) {
+                if prev.pos.hand(piece) != self.pos.hand(piece) {
                     t.push(piece);
                 }
             }
@@ -113,7 +104,7 @@ impl Render {
             bars: PlayerBars::from(params.black, params.white),
             orientation: params.orientation,
             frames: vec![RenderFrame {
-                sfen: params.sfen,
+                pos: params.sfen,
                 highlighted: highlight_uci(params.last_move),
                 checked: params
                     .check
@@ -142,7 +133,7 @@ impl Render {
                 .frames
                 .into_iter()
                 .map(|frame| RenderFrame {
-                    sfen: frame.sfen,
+                    pos: frame.pos,
                     highlighted: highlight_uci(frame.last_move),
                     checked: frame
                         .check
@@ -426,8 +417,6 @@ fn render_diff(
         view.fill(theme.transparent_color());
     }
 
-    let mut pos = Position::new();
-    pos.set_sfen(&frame.sfen).unwrap();
     let center_squares = Factory::all()
         .filter(|sq| {
             (sq.rank() == 2 || sq.rank() == 3 || sq.rank() == 5 || sq.rank() == 6)
@@ -437,7 +426,7 @@ fn render_diff(
 
     for sq in diff {
         let key = SpriteKey {
-            piece: *pos.piece_at(sq),
+            piece: *frame.pos.piece_at(sq),
             orientation: orientation,
             highlight: frame.highlighted.is_occupied(sq),
             check: frame.checked.is_occupied(sq),
@@ -472,7 +461,7 @@ fn render_diff(
     }
 
     for p in hand_diff {
-        let nb = std::cmp::min(pos.hand(p), 99);
+        let nb = std::cmp::min(frame.pos.hand(p), 99);
 
         let key = SpriteHandKey {
             piece: p,
