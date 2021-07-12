@@ -14,10 +14,10 @@ frame by frame.
 ## Usage
 
 ```
-lila-gif 0.1.0
+lishogi-gif 0.1.0
 
 USAGE:
-    lila-gif [OPTIONS]
+    lishogi-gif [OPTIONS]
 
 FLAGS:
     -h, --help       Prints help information
@@ -94,7 +94,7 @@ background. The example below is the last frame of the animation.
 
 ## License
 
-lila-gif is licensed under the GNU Affero General Public License, version 3 or
+lishogi-gif is licensed under the GNU Affero General Public License, version 3 or
 any later version, at your option.
 
 The generated images include text in

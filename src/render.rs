@@ -180,7 +180,7 @@ impl Iterator for Render {
                 let comment = self
                     .comment
                     .as_ref()
-                    .map_or("https://github.com/niklasf/lila-gif".as_bytes(), |c| c.as_bytes());
+                    .map_or("https://github.com/WandererXII/lishogi-gif".as_bytes(), |c| c.as_bytes());
                 if !comment.is_empty() {
                     let mut comments = block::Comment::default();
                     comments.add_comment(comment);
