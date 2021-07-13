@@ -157,7 +157,7 @@ pub struct RequestBody {
 pub struct RequestFrame {
     #[serde_as(as = "DisplayFromStr")]
     #[serde(default)]
-    pub pos: Position,
+    pub sfen: Position,
     #[serde(default)]
     pub delay: Option<u16>,
     #[serde_as(as = "Option<DisplayFromStr>")]
@@ -176,7 +176,7 @@ impl RequestBody {
 
         let mut frames = Vec::with_capacity(100);
         frames.push(RequestFrame {
-            pos: Position::from_sfen(&pos.to_sfen()).unwrap(),
+            sfen: Position::from_sfen(&pos.to_sfen()).unwrap(),
             ..Default::default()
         });
 
@@ -188,7 +188,7 @@ impl RequestBody {
             pos.make_move(m).unwrap();
 
             frames.push(RequestFrame {
-                pos: Position::from_sfen(&pos.to_sfen()).unwrap(),
+                sfen: Position::from_sfen(&pos.to_sfen()).unwrap(),
                 check: if pos.in_check(pos.side_to_move()) {
                     CheckSquare::Yes
                 } else {

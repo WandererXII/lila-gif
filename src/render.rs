@@ -37,7 +37,7 @@ impl PlayerBars {
 
 #[derive(Default, Debug)]
 struct RenderFrame {
-    pos: Position,
+    sfen: Position,
     checked: Bitboard,
     highlighted: Bitboard,
     delay: Option<u16>,
@@ -47,21 +47,21 @@ impl RenderFrame {
     fn diff(&self, prev: &RenderFrame) -> Bitboard {
         (&prev.checked ^ &self.checked)
             | (&prev.highlighted ^ &self.highlighted)
-            | (prev.pos.player_bb(Color::Black) ^ self.pos.player_bb(Color::Black))
-            | (prev.pos.piece_bb(PieceType::Pawn) ^ self.pos.piece_bb(PieceType::Pawn))
-            | (prev.pos.piece_bb(PieceType::Lance) ^ self.pos.piece_bb(PieceType::Lance))
-            | (prev.pos.piece_bb(PieceType::Knight) ^ self.pos.piece_bb(PieceType::Knight))
-            | (prev.pos.piece_bb(PieceType::Silver) ^ self.pos.piece_bb(PieceType::Silver))
-            | (prev.pos.piece_bb(PieceType::Gold) ^ self.pos.piece_bb(PieceType::Gold))
-            | (prev.pos.piece_bb(PieceType::Bishop) ^ self.pos.piece_bb(PieceType::Bishop))
-            | (prev.pos.piece_bb(PieceType::Rook) ^ self.pos.piece_bb(PieceType::Rook))
-            | (prev.pos.piece_bb(PieceType::King) ^ self.pos.piece_bb(PieceType::King))
-            | (prev.pos.piece_bb(PieceType::ProPawn) ^ self.pos.piece_bb(PieceType::ProPawn))
-            | (prev.pos.piece_bb(PieceType::ProLance) ^ self.pos.piece_bb(PieceType::ProLance))
-            | (prev.pos.piece_bb(PieceType::ProKnight) ^ self.pos.piece_bb(PieceType::ProKnight))
-            | (prev.pos.piece_bb(PieceType::ProSilver) ^ self.pos.piece_bb(PieceType::ProSilver))
-            | (prev.pos.piece_bb(PieceType::ProBishop) ^ self.pos.piece_bb(PieceType::ProBishop))
-            | (prev.pos.piece_bb(PieceType::ProRook) ^ self.pos.piece_bb(PieceType::ProRook))
+            | (prev.sfen.player_bb(Color::Black) ^ self.sfen.player_bb(Color::Black))
+            | (prev.sfen.piece_bb(PieceType::Pawn) ^ self.sfen.piece_bb(PieceType::Pawn))
+            | (prev.sfen.piece_bb(PieceType::Lance) ^ self.sfen.piece_bb(PieceType::Lance))
+            | (prev.sfen.piece_bb(PieceType::Knight) ^ self.sfen.piece_bb(PieceType::Knight))
+            | (prev.sfen.piece_bb(PieceType::Silver) ^ self.sfen.piece_bb(PieceType::Silver))
+            | (prev.sfen.piece_bb(PieceType::Gold) ^ self.sfen.piece_bb(PieceType::Gold))
+            | (prev.sfen.piece_bb(PieceType::Bishop) ^ self.sfen.piece_bb(PieceType::Bishop))
+            | (prev.sfen.piece_bb(PieceType::Rook) ^ self.sfen.piece_bb(PieceType::Rook))
+            | (prev.sfen.piece_bb(PieceType::King) ^ self.sfen.piece_bb(PieceType::King))
+            | (prev.sfen.piece_bb(PieceType::ProPawn) ^ self.sfen.piece_bb(PieceType::ProPawn))
+            | (prev.sfen.piece_bb(PieceType::ProLance) ^ self.sfen.piece_bb(PieceType::ProLance))
+            | (prev.sfen.piece_bb(PieceType::ProKnight) ^ self.sfen.piece_bb(PieceType::ProKnight))
+            | (prev.sfen.piece_bb(PieceType::ProSilver) ^ self.sfen.piece_bb(PieceType::ProSilver))
+            | (prev.sfen.piece_bb(PieceType::ProBishop) ^ self.sfen.piece_bb(PieceType::ProBishop))
+            | (prev.sfen.piece_bb(PieceType::ProRook) ^ self.sfen.piece_bb(PieceType::ProRook))
     }
 
     fn hand_diff(&self, prev: &RenderFrame) -> Vec<Piece> {
@@ -73,7 +73,7 @@ impl RenderFrame {
                     color: c,
                     piece_type: pt,
                 };
-                if prev.pos.hand(piece) != self.pos.hand(piece) {
+                if prev.sfen.hand(piece) != self.sfen.hand(piece) {
                     t.push(piece);
                 }
             }
@@ -110,7 +110,7 @@ impl Render {
                     .to_square(params.sfen.find_king(params.sfen.side_to_move()))
                     .map(|sq| Bitboard::from_square(sq))
                     .unwrap_or(Bitboard::empty()),
-                pos: params.sfen,
+                sfen: params.sfen,
                 delay: None,
             }]
             .into_iter(),
@@ -136,10 +136,10 @@ impl Render {
                     highlighted: highlight_uci(frame.last_move),
                     checked: frame
                         .check
-                        .to_square(frame.pos.find_king(frame.pos.side_to_move()))
+                        .to_square(frame.sfen.find_king(frame.sfen.side_to_move()))
                         .map(|sq| Bitboard::from_square(sq))
                         .unwrap_or(Bitboard::empty()),
-                    pos: frame.pos,
+                    sfen: frame.sfen,
                     delay: Some(frame.delay.unwrap_or(default_delay)),
                 })
                 .collect::<Vec<_>>()
@@ -428,7 +428,7 @@ fn render_diff(
 
     for sq in diff {
         let key = SpriteKey {
-            piece: *frame.pos.piece_at(sq),
+            piece: *frame.sfen.piece_at(sq),
             orientation: orientation,
             highlight: frame.highlighted.is_occupied(sq),
             check: frame.checked.is_occupied(sq),
@@ -463,7 +463,7 @@ fn render_diff(
     }
 
     for p in hand_diff {
-        let nb = std::cmp::min(frame.pos.hand(p), 99);
+        let nb = std::cmp::min(frame.sfen.hand(p), 99);
 
         let key = SpriteHandKey {
             piece: p,
