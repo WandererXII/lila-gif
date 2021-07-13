@@ -864,7 +864,7 @@ dependencies = [
 [[package]]
 name = "shogi"
 version = "0.10.0"
-source = "git+https://github.com/WandererXII/shogi-rs#2adcbb1f965b211007eea6c22ddad7e1ea6205fa"
+source = "git+https://github.com/WandererXII/shogi-rs#f724ba8d7b3a865ebfb318cbbef46dd204d762c5"
 dependencies = [
  "bitintr",
  "itertools",

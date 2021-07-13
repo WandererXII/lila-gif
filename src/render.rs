@@ -104,13 +104,13 @@ impl Render {
             bars: PlayerBars::from(params.black, params.white),
             orientation: params.orientation,
             frames: vec![RenderFrame {
-                pos: params.sfen,
                 highlighted: highlight_uci(params.last_move),
                 checked: params
                     .check
-                    .to_square()
+                    .to_square(params.sfen.find_king(params.sfen.side_to_move()))
                     .map(|sq| Bitboard::from_square(sq))
                     .unwrap_or(Bitboard::empty()),
+                pos: params.sfen,
                 delay: None,
             }]
             .into_iter(),
@@ -133,13 +133,13 @@ impl Render {
                 .frames
                 .into_iter()
                 .map(|frame| RenderFrame {
-                    pos: frame.pos,
                     highlighted: highlight_uci(frame.last_move),
                     checked: frame
                         .check
-                        .to_square()
+                        .to_square(frame.pos.find_king(frame.pos.side_to_move()))
                         .map(|sq| Bitboard::from_square(sq))
                         .unwrap_or(Bitboard::empty()),
+                    pos: frame.pos,
                     delay: Some(frame.delay.unwrap_or(default_delay)),
                 })
                 .collect::<Vec<_>>()
@@ -180,7 +180,9 @@ impl Iterator for Render {
                 let comment = self
                     .comment
                     .as_ref()
-                    .map_or("https://github.com/WandererXII/lishogi-gif".as_bytes(), |c| c.as_bytes());
+                    .map_or("https://github.com/WandererXII/lishogi-gif".as_bytes(), |c| {
+                        c.as_bytes()
+                    });
                 if !comment.is_empty() {
                     let mut comments = block::Comment::default();
                     comments.add_comment(comment);

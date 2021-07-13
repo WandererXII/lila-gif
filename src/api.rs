@@ -113,10 +113,10 @@ impl<'de> Deserialize<'de> for CheckSquare {
 }
 
 impl CheckSquare {
-    pub fn to_square(self) -> Option<Square> {
+    pub fn to_square(self, king_pos: Option<Square>) -> Option<Square> {
         match self {
             CheckSquare::No => None,
-            CheckSquare::Yes => Square::from_sfen("e5"),
+            CheckSquare::Yes => king_pos,
             CheckSquare::Square(sq) => Some(sq),
         }
     }
@@ -189,7 +189,7 @@ impl RequestBody {
 
             frames.push(RequestFrame {
                 pos: Position::from_sfen(&pos.to_sfen()).unwrap(),
-                check: if pos.in_check(pos.side_to_move().flip()) {
+                check: if pos.in_check(pos.side_to_move()) {
                     CheckSquare::Yes
                 } else {
                     CheckSquare::No
