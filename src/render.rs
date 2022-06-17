@@ -212,6 +212,7 @@ impl Iterator for Render {
                             ..self.theme.hand_width()
                         )),
                         self.theme,
+                        true
                     );
                     render_hand(
                         view.slice_mut(s!(
@@ -219,16 +220,18 @@ impl Iterator for Render {
                             (self.theme.hand_width() + self.theme.board_width())..
                         )),
                         self.theme,
+                        false
                     );
                     view.slice_mut(s!(
                         self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_height()),
                         ..
                     ))
                 } else {
-                    render_hand(view.slice_mut(s!(.., ..self.theme.hand_width())), self.theme);
+                    render_hand(view.slice_mut(s!(.., ..self.theme.hand_width())), self.theme, true);
                     render_hand(
                         view.slice_mut(s!(.., (self.theme.hand_width() + self.theme.board_width())..)),
                         self.theme,
+                        false
                     );
                     view
                 };
@@ -486,9 +489,9 @@ fn render_diff(
 
         if nb > 0 {
             let mut text_color = theme.white_color();
-            let font_size = 30.0;
-            let x_offset = 77;
-            let y_offset = 75;
+            let font_size = 38.0 + (if nb < 10 { 2.0 } else { 0.0 });
+            let x_offset = 69 + (if nb < 10 { 2 } else { 0 });
+            let y_offset = 65;
             let scale = Scale {
                 x: font_size,
                 y: font_size,
@@ -531,8 +534,12 @@ fn render_diff(
     ((x_min, y_min), (width, height))
 }
 
-fn render_hand(mut view: ArrayViewMut2<u8>, theme: &Theme) {
+fn render_hand(mut view: ArrayViewMut2<u8>, theme: &Theme, left: bool) {
     view.fill(theme.hand_color());
+    view.slice_mut(s!(
+        ..,
+        if left {(theme.hand_width() - 1)..theme.hand_width() } else {0..1}
+    )).fill(theme.circle_color());
 }
 
 fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {

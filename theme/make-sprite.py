@@ -11,7 +11,7 @@ COLORS = [
     "#bf811d", # title color
     "#b72fc6", # bot color
     "#706f6e", # 50% text color on dark background
-    "#6b6b6b", # pocket background color
+    "#6a6b6b", # pocket background color
     "#ffffff", # white text
 ]
 
@@ -70,8 +70,8 @@ def make_sprite(f):
         "y": str(SQUARE_HEIGHT * 2),
         "width": str(SQUARE_WIDTH * 4),
         "height": str(7 * SQUARE_HEIGHT),
-        "stroke": "#6b6b6b",
-        "fill": "#6b6b6b",
+        "stroke": "none",
+        "fill": COLORS[7],
     })
 
     for x in range(4):
@@ -91,12 +91,13 @@ def make_sprite(f):
             })
             if x > 1:
                 ET.SubElement(svg, "rect", {
-                    "transform": f"translate({SQUARE_WIDTH * (8 + x) + (SQUARE_WIDTH * 2 / 3)}, {SQUARE_HEIGHT * (y + 2) + (SQUARE_HEIGHT * 2 / 3)})",
-                    "width": str(SQUARE_WIDTH / 3),
-                    "height": str(SQUARE_HEIGHT / 3),
-                    "stroke": "none",
-                    "rx": "10",
-                    "fill": "#d64f00",
+                    "transform": f"translate({SQUARE_WIDTH * (8 + x) + (SQUARE_WIDTH / 5 * 3)}, {SQUARE_HEIGHT * (y + 2) + (SQUARE_HEIGHT / 5 * 3)})",
+                    "width": str(SQUARE_WIDTH / 5 * 2),
+                    "height": str(SQUARE_WIDTH / 5 * 2), # we want a square
+                    "stroke": "#fff",
+                    "stroke-width": "2",
+                    "rx": "8",
+                    "fill": COLORS[2],
                 })
 
     ET.SubElement(svg, "circle", {
