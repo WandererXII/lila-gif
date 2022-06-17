@@ -7,7 +7,7 @@ use crate::api::Orientation;
 
 const SQUARE_WIDTH: usize = 99;
 const SQUARE_HEIGHT: usize = 108;
-const CIRCLE: usize = 11;
+const CIRCLE: usize = 7;
 
 pub struct SpriteHandKey {
     pub piece: Piece,

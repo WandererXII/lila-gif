@@ -103,7 +103,7 @@ def make_sprite(f):
     ET.SubElement(svg, "circle", {
         "cx": str(SQUARE_WIDTH * 10 + SQUARE_WIDTH / 2),
         "cy": str(SQUARE_HEIGHT + SQUARE_HEIGHT / 2),
-        "r": str(SQUARE_HEIGHT / 10),
+        "r": str(7),
         "fill": "#000",
     })
 
