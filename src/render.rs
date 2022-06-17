@@ -104,7 +104,7 @@ impl Render {
             bars: PlayerBars::from(params.black, params.white),
             orientation: params.orientation,
             frames: vec![RenderFrame {
-                highlighted: highlight_uci(params.last_move),
+                highlighted: highlight_move(params.last_move),
                 checked: params
                     .check
                     .to_square(params.sfen.find_king(params.sfen.side_to_move()))
@@ -133,7 +133,7 @@ impl Render {
                 .frames
                 .into_iter()
                 .map(|frame| RenderFrame {
-                    highlighted: highlight_uci(frame.last_move),
+                    highlighted: highlight_move(frame.last_move),
                     checked: frame
                         .check
                         .to_square(frame.sfen.find_king(frame.sfen.side_to_move()))
@@ -590,7 +590,7 @@ fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {
     }
 }
 
-fn highlight_uci(m: Option<Move>) -> Bitboard {
+fn highlight_move(m: Option<Move>) -> Bitboard {
     match m {
         Some(Move::Normal { from, to, .. }) => Bitboard::from_square(from) | Bitboard::from_square(to),
         Some(Move::Drop { to, .. }) => Bitboard::from_square(to),
