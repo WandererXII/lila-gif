@@ -202,26 +202,26 @@ impl Iterator for Render {
                         self.orientation.fold(&bars.white, &bars.black),
                     );
                     render_bar(
-                        view.slice_mut(s!((self.theme.bar_height() + self.theme.board_width()).., ..)),
+                        view.slice_mut(s!((self.theme.bar_height() + self.theme.board_height()).., ..)),
                         self.theme,
                         self.orientation.fold(&bars.black, &bars.white),
                     );
                     render_hand(
                         view.slice_mut(s!(
-                            self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width()),
+                            self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_height()),
                             ..self.theme.hand_width()
                         )),
                         self.theme,
                     );
                     render_hand(
                         view.slice_mut(s!(
-                            self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width()),
+                            self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_height()),
                             (self.theme.hand_width() + self.theme.board_width())..
-                        )), // self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width())
+                        )),
                         self.theme,
                     );
                     view.slice_mut(s!(
-                        self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_width()),
+                        self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_height()),
                         ..
                     ))
                 } else {
@@ -369,7 +369,7 @@ fn render_diff(
         0
     } else {
         diff.into_iter()
-            .map(|sq| orientation.x(sq) * theme.square())
+            .map(|sq| orientation.x(sq) * theme.square_width())
             .min()
             .unwrap_or(0)
             + theme.hand_width()
@@ -378,36 +378,36 @@ fn render_diff(
         theme.width()
     } else {
         diff.into_iter()
-            .map(|sq| orientation.x(sq) * theme.square())
+            .map(|sq| orientation.x(sq) * theme.square_width())
             .max()
             .unwrap_or(0)
             + theme.hand_width()
-            + theme.square()
+            + theme.square_width()
     };
 
     let y_min = std::cmp::min(
         hand_diff
             .iter()
-            .map(|p| orientation.hand_y(*p) * theme.square())
+            .map(|p| orientation.hand_y(*p) * theme.square_height())
             .min()
             .unwrap_or(9),
         diff.into_iter()
-            .map(|sq| orientation.y(sq) * theme.square())
+            .map(|sq| orientation.y(sq) * theme.square_height())
             .min()
             .unwrap_or(0),
     );
     let y_max = std::cmp::max(
         hand_diff
             .iter()
-            .map(|p| orientation.hand_y(*p) * theme.square())
+            .map(|p| orientation.hand_y(*p) * theme.square_height())
             .max()
             .unwrap_or(0)
-            + theme.square(),
+            + theme.square_height(),
         diff.into_iter()
-            .map(|sq| orientation.y(sq) * theme.square())
+            .map(|sq| orientation.y(sq) * theme.square_height())
             .max()
             .unwrap_or(0)
-            + theme.square(),
+            + theme.square_height(),
     );
 
     let width = x_max - x_min;
@@ -433,20 +433,20 @@ fn render_diff(
             highlight: frame.highlighted.is_occupied(sq),
             check: frame.checked.is_occupied(sq),
         };
-        let left = theme.hand_width() + orientation.x(sq) * theme.square() - x_min;
-        let top = orientation.y(sq) * theme.square() - y_min;
+        let left = theme.hand_width() + orientation.x(sq) * theme.square_width() - x_min;
+        let top = orientation.y(sq) * theme.square_height() - y_min;
 
-        view.slice_mut(s!(top..(top + theme.square()), left..(left + theme.square())))
+        view.slice_mut(s!(top..(top + theme.square_height()), left..(left + theme.square_width())))
             .assign(&theme.sprite(key));
 
         if center_squares.contains(&sq) {
             let top_circle = if orientation.y(sq) == 2 || orientation.y(sq) == 5 {
-                top + theme.square() - theme.circle()
+                top + theme.square_height() - theme.circle()
             } else {
                 top
             };
             let left_circle = if orientation.x(sq) == 2 || orientation.x(sq) == 5 {
-                left + theme.square() - theme.circle()
+                left + theme.square_width() - theme.circle()
             } else {
                 left
             };
@@ -454,11 +454,11 @@ fn render_diff(
                 (top_circle)..(top_circle + theme.circle()),
                 (left_circle)..(left_circle + theme.circle())
             ))
-            .zip_mut_with(&theme.circle_sprite(top != top_circle, left != left_circle), |x, y| {
-                if *y != theme.transparent_color() as u8 {
-                    *x = y.clone()
-                }
-            });
+           .zip_mut_with(&theme.circle_sprite(top != top_circle, left != left_circle), |x, y| {
+               if *y == theme.circle_color() {
+                   *x = theme.circle_color();
+               }
+           });
         }
     }
 
@@ -471,24 +471,24 @@ fn render_diff(
             number: nb,
         };
         let left = if orientation.eq_color(p.color) {
-            width - theme.square() - theme.hand_offset() / 2
+            width - theme.square_width() - theme.hand_offset() / 2
         } else {
             theme.hand_offset() / 2
         };
-        let top = orientation.hand_y(p) * theme.square() - y_min;
+        let top = orientation.hand_y(p) * theme.square_height() - y_min;
 
         // +1 to cut of border - todo fix sprite
         view.slice_mut(s!(
-            (top + 1)..(top + theme.square()),
-            (left + 1)..(left + theme.square())
+            (top + 1)..(top + theme.square_height()),
+            (left + 1)..(left + theme.square_width())
         ))
         .assign(&theme.hand_sprite(key));
 
         if nb > 0 {
             let mut text_color = theme.white_color();
             let font_size = 30.0;
-            let x_offset = 69;
-            let y_offset = 60;
+            let x_offset = 77;
+            let y_offset = 75;
             let scale = Scale {
                 x: font_size,
                 y: font_size,

@@ -35,8 +35,8 @@ PIECES_NAMES = {
 
 HAND_PIECES = ["pawn", "lance", "knight", "silver", "gold", "bishop", "rook"]
 
-SQUARE_SIZE = 100
-COLOR_WIDTH = SQUARE_SIZE
+SQUARE_WIDTH = 99
+SQUARE_HEIGHT = 108
 
 
 def make_sprite(f):
@@ -44,7 +44,7 @@ def make_sprite(f):
         "xmlns": "http://www.w3.org/2000/svg",
         "version": "1.1",
         "xmlns:xlink": "http://www.w3.org/1999/xlink",
-        "viewBox": f"0 0 {SQUARE_SIZE * 12} {SQUARE_SIZE * 9}",
+        "viewBox": f"0 0 {SQUARE_WIDTH * 12} {SQUARE_HEIGHT * 9}",
     })
 
     defs = ET.SubElement(svg, "defs")
@@ -56,19 +56,20 @@ def make_sprite(f):
 
     for x, color in enumerate(COLORS[2:]):
         ET.SubElement(svg, "rect", {
-            "x": str(COLOR_WIDTH * x),
+            "x": str(SQUARE_WIDTH * x),
             "y": "0",
-            "width": str(COLOR_WIDTH),
-            "height": str(SQUARE_SIZE),
+            "width": str(SQUARE_WIDTH),
+            "height": str(SQUARE_HEIGHT),
+            "shape-rendering": "crispEdges",
             "stroke": "none",
             "fill": color,
         })
         
     ET.SubElement(svg, "rect", {
-        "x": str(SQUARE_SIZE * 8),
-        "y": str(SQUARE_SIZE * 2),
-        "width": str(SQUARE_SIZE * 4),
-        "height": str(7 * SQUARE_SIZE),
+        "x": str(SQUARE_WIDTH * 8),
+        "y": str(SQUARE_HEIGHT * 2),
+        "width": str(SQUARE_WIDTH * 4),
+        "height": str(7 * SQUARE_HEIGHT),
         "stroke": "#6b6b6b",
         "fill": "#6b6b6b",
     })
@@ -77,27 +78,31 @@ def make_sprite(f):
         for y, piece in enumerate(HAND_PIECES):
             color = "white" if x % 2 else "black"
             opacity = "1.0" if x > 1 else "0.1"
-            ET.SubElement(svg, "use", {
-                    "xlink:href": f"#{color}-{piece}",
-                    "transform": f"translate({SQUARE_SIZE * (8 + x)}, {SQUARE_SIZE * (y + 2)})",
-                    "opacity": opacity,
-                    "x": "0",
-                    "y": "0"
-                })
+            wrap = ET.SubElement(svg, 'svg', {
+                "x": str(SQUARE_WIDTH * (8 + x)),
+                "y": str(SQUARE_HEIGHT * (y + 2)),
+                "width": str(SQUARE_WIDTH),
+                "height": str(SQUARE_HEIGHT),
+                "viewBox": "5 5 90 90"
+            })
+            ET.SubElement(wrap, "use", {
+                "opacity": opacity,
+                "xlink:href": f"#{color}-{piece}",
+            })
             if x > 1:
                 ET.SubElement(svg, "rect", {
-                    "transform": f"translate({SQUARE_SIZE * (8 + x) + (SQUARE_SIZE * 2 / 3)}, {SQUARE_SIZE * (y + 2) + (SQUARE_SIZE * 2 / 3)})",
-                    "width": str(SQUARE_SIZE / 3),
-                    "height": str(SQUARE_SIZE / 3),
+                    "transform": f"translate({SQUARE_WIDTH * (8 + x) + (SQUARE_WIDTH * 2 / 3)}, {SQUARE_HEIGHT * (y + 2) + (SQUARE_HEIGHT * 2 / 3)})",
+                    "width": str(SQUARE_WIDTH / 3),
+                    "height": str(SQUARE_HEIGHT / 3),
                     "stroke": "none",
                     "rx": "10",
                     "fill": "#d64f00",
                 })
 
     ET.SubElement(svg, "circle", {
-        "cx": str(SQUARE_SIZE * 10 + SQUARE_SIZE / 2),
-        "cy": str(SQUARE_SIZE + SQUARE_SIZE / 2),
-        "r": str(SQUARE_SIZE / 10),
+        "cx": str(SQUARE_WIDTH * 10 + SQUARE_WIDTH / 2),
+        "cy": str(SQUARE_HEIGHT + SQUARE_HEIGHT / 2),
+        "r": str(SQUARE_HEIGHT / 10),
         "fill": "#000",
     })
 
@@ -106,10 +111,10 @@ def make_sprite(f):
 
             if( y != 0 or x > 7) and (x < 8 or y < 2) and not (x > 9 and y == 1):
                 ET.SubElement(svg, "rect", {
-                    "x": str(SQUARE_SIZE * x),
-                    "y": str(SQUARE_SIZE * y),
-                    "width": str(SQUARE_SIZE),
-                    "height": str(SQUARE_SIZE),
+                    "x": str(SQUARE_WIDTH * x),
+                    "y": str(SQUARE_HEIGHT * y),
+                    "width": str(SQUARE_WIDTH),
+                    "height": str(SQUARE_HEIGHT),
                     "stroke": "#000",
                     "stroke-width": "2",
                     "fill": COLORS[x % 2],
@@ -117,29 +122,37 @@ def make_sprite(f):
 
             if y > 4 and (x == 6 or x == 7):
                 ET.SubElement(svg, "rect", {
-                    "x": str(SQUARE_SIZE * x),
-                    "y": str(SQUARE_SIZE * y),
-                    "width": str(SQUARE_SIZE),
-                    "height": str(SQUARE_SIZE),
+                    "x": str(SQUARE_WIDTH * x),
+                    "y": str(SQUARE_HEIGHT * y),
+                    "width": str(SQUARE_WIDTH),
+                    "height": str(SQUARE_HEIGHT),
                     "fill": "url(#check_gradient)",
                 })
             if y > 0 and x < 8:
                 my_sq = (y-1)//2 + x//2 * 4
                 piece_type = my_sq % 15
                 color = "white" if y % 2 else "black"
-                ET.SubElement(svg, "use", {
+                wrap = ET.SubElement(svg, 'svg', {
+                    "x": str(SQUARE_WIDTH * x),
+                    "y": str(SQUARE_HEIGHT * y),
+                    "width": str(SQUARE_WIDTH),
+                    "height": str(SQUARE_HEIGHT),
+                    "viewBox": "5 5 90 90"
+                })
+                ET.SubElement(wrap, "use", {
                     "xlink:href": f"#{color}-{PIECES_NAMES[piece_type]}",
-                    "transform": f"translate({SQUARE_SIZE * x}, {SQUARE_SIZE * y})",
-                    "x": "0",
-                    "y": "0"
                 })
             elif y < 2 and (x == 8 or x == 9):
                 color = "white" if (y+1) % 2 else "black"
-                ET.SubElement(svg, "use", {
+                wrap = ET.SubElement(svg, 'svg', {
+                    "x": str(SQUARE_WIDTH * x),
+                    "y": str(SQUARE_HEIGHT * y),
+                    "width": str(SQUARE_WIDTH),
+                    "height": str(SQUARE_HEIGHT),
+                    "viewBox": "5 5 90 90"
+                })
+                ET.SubElement(wrap, "use", {
                     "xlink:href": f"#{color}-tama",
-                    "transform": f"translate({SQUARE_SIZE * x}, {SQUARE_SIZE * y})",
-                    "x": "0",
-                    "y": "0"
                 })
 
     f.write(ET.tostring(svg))
