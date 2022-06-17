@@ -7,9 +7,9 @@ frame by frame.
 
 ![Example](/example.gif)
 
-| size    | render time | frames | colors | width   | height |
-| ------- | ----------- | ------ | ------ | ------- | ------ |
-| 668 KiB | ~55 ms      | 101    | 63     | 1080 px | 930 px |
+| size    | frames | colors | width   | height  |
+| ------- | ------ | ------ | ------- | ------- |
+| 844 KiB | 101    | 63     | 1188 px | 1092 px |
 
 ## Usage
 
@@ -79,8 +79,7 @@ curl http://localhost:6175/example.gif --output example.gif
 
 Instead of rendering vector graphics at runtime, all pieces are prerendered
 on every possible background. This allows preparing a minimal color palette
-ahead of time. (Pieces are not just black and white, but need other colors
-for anti-aliasing on the different background colors).
+ahead of time.
 
 ![Sprite](/theme/sprite.gif)
 
@@ -88,7 +87,7 @@ All thats left to do at runtime, is copying sprites and Gif encoding.
 More than 95% of the rendering time is spent in LZW compression.
 
 For animated games, frames only contain the changed squares on transparent
-background. The example below is the last frame of the animation.
+background. The example below is a frame from the animation.
 
 ![Example frame](/example-frame.gif)
 
