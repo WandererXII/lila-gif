@@ -1,10 +1,11 @@
-use clap::Clap;
-use std::convert::Infallible;
-use std::net::SocketAddr;
-use warp::http::status::StatusCode;
-use warp::http::Response;
-use warp::hyper::Body;
-use warp::Filter;
+use std::{convert::Infallible, net::SocketAddr};
+
+use clap::Parser;
+use warp::{
+    http::{status::StatusCode, Response},
+    hyper::Body,
+    Filter,
+};
 
 mod api;
 mod render;
@@ -15,7 +16,7 @@ use render::Render;
 use shogi::bitboard::Factory as BBFactory;
 use theme::Theme;
 
-#[derive(Clap)]
+#[derive(Parser)]
 struct Opt {
     /// Listen on this address
     #[clap(long = "address", default_value = "127.0.0.1")]
