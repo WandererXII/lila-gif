@@ -2,11 +2,8 @@ use bytes::{BufMut, Bytes, BytesMut};
 use gift::{block, Encoder};
 use ndarray::{s, ArrayViewMut2};
 use rusttype::Scale;
-use shogi::bitboard::Factory;
-use shogi::Move;
-use shogi::{Bitboard, Color, Piece, PieceType, Position, Square};
-use std::iter::FusedIterator;
-use std::vec;
+use shogi::{bitboard::Factory, Bitboard, Color, Move, Piece, PieceType, Position, Square};
+use std::{iter::FusedIterator, vec};
 
 use crate::api::{Comment, Orientation, PlayerName, RequestBody, RequestParams};
 use crate::theme::{SpriteHandKey, SpriteKey, Theme};
@@ -212,7 +209,7 @@ impl Iterator for Render {
                             ..self.theme.hand_width()
                         )),
                         self.theme,
-                        true
+                        true,
                     );
                     render_hand(
                         view.slice_mut(s!(
@@ -220,7 +217,7 @@ impl Iterator for Render {
                             (self.theme.hand_width() + self.theme.board_width())..
                         )),
                         self.theme,
-                        false
+                        false,
                     );
                     view.slice_mut(s!(
                         self.theme.bar_height()..(self.theme.bar_height() + self.theme.board_height()),
@@ -231,7 +228,7 @@ impl Iterator for Render {
                     render_hand(
                         view.slice_mut(s!(.., (self.theme.hand_width() + self.theme.board_width())..)),
                         self.theme,
-                        false
+                        false,
                     );
                     view
                 };
@@ -439,8 +436,11 @@ fn render_diff(
         let left = theme.hand_width() + orientation.x(sq) * theme.square_width() - x_min;
         let top = orientation.y(sq) * theme.square_height() - y_min;
 
-        view.slice_mut(s!(top..(top + theme.square_height()), left..(left + theme.square_width())))
-            .assign(&theme.sprite(key));
+        view.slice_mut(s!(
+            top..(top + theme.square_height()),
+            left..(left + theme.square_width())
+        ))
+        .assign(&theme.sprite(key));
 
         if center_squares.contains(&sq) {
             let top_circle = if orientation.y(sq) == 2 || orientation.y(sq) == 5 {
@@ -457,11 +457,11 @@ fn render_diff(
                 (top_circle)..(top_circle + theme.circle()),
                 (left_circle)..(left_circle + theme.circle())
             ))
-           .zip_mut_with(&theme.circle_sprite(top != top_circle, left != left_circle), |x, y| {
-               if *y == theme.circle_color() {
-                   *x = theme.circle_color();
-               }
-           });
+            .zip_mut_with(&theme.circle_sprite(top != top_circle, left != left_circle), |x, y| {
+                if *y == theme.circle_color() {
+                    *x = theme.circle_color();
+                }
+            });
         }
     }
 
@@ -538,8 +538,13 @@ fn render_hand(mut view: ArrayViewMut2<u8>, theme: &Theme, left: bool) {
     view.fill(theme.hand_color());
     view.slice_mut(s!(
         ..,
-        if left {(theme.hand_width() - 1)..theme.hand_width() } else {0..1}
-    )).fill(theme.circle_color());
+        if left {
+            (theme.hand_width() - 1)..theme.hand_width()
+        } else {
+            0..1
+        }
+    ))
+    .fill(theme.circle_color());
 }
 
 fn render_bar(mut view: ArrayViewMut2<u8>, theme: &Theme, player_name: &str) {

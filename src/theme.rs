@@ -79,8 +79,11 @@ impl Theme {
         let mut decoder = gift::Decoder::new(std::io::Cursor::new(sprite_data)).into_frames();
         let preamble = decoder.preamble().expect("decode preamble").expect("preamble");
         let frame = decoder.next().expect("frame").expect("decode frame");
-        let sprite =
-            Array2::from_shape_vec((SQUARE_HEIGHT * 9, SQUARE_WIDTH * 12), frame.image_data.data().to_owned()).expect("from shape");
+        let sprite = Array2::from_shape_vec(
+            (SQUARE_HEIGHT * 9, SQUARE_WIDTH * 12),
+            frame.image_data.data().to_owned(),
+        )
+        .expect("from shape");
 
         let font_data = include_bytes!("../theme/NotoSans-Regular.ttf") as &[u8];
         let font = Font::try_from_bytes(font_data).expect("parse font");
