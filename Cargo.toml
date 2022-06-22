@@ -1,6 +1,6 @@
 [package]
 name = "lishogi-gif"
-version = "0.1.0"
+version = "0.2.0"
 publish = false
 description = "Webservice to render gifs of shogi positions and games"
 repository = "https://github.com/WandererXII/lishogi-gif"

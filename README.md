@@ -14,7 +14,7 @@ frame by frame.
 ## Usage
 
 ```
-lishogi-gif 0.1.0
+lishogi-gif 0.2.0
 
 USAGE:
     lishogi-gif [OPTIONS]
