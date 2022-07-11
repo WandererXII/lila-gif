@@ -4,8 +4,8 @@ import chess.svg
 import dist.pieces as TP
 
 COLORS = [
-    "#fabb54", # light square
-    "#d3bf31", # highlighted light square
+    "#f4bf57", # square
+    "#d0c333", # highlighted square
     "#262421", # dark background
     "#bababa", # text color
     "#bf811d", # title color
