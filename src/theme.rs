@@ -5,9 +5,10 @@ use shogi::{Color, Piece, PieceType};
 
 use crate::api::Orientation;
 
-const SQUARE_WIDTH: usize = 99;
-const SQUARE_HEIGHT: usize = 108;
-const CIRCLE: usize = 7;
+const SCALE: usize = 7;
+const SQUARE_WIDTH: usize = 11 * SCALE;
+const SQUARE_HEIGHT: usize = 12 * SCALE;
+const CIRCLE: usize = 5;
 
 pub struct SpriteHandKey {
     pub piece: Piece,

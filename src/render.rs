@@ -480,7 +480,7 @@ fn render_diff(
         };
         let top = orientation.hand_y(p) * theme.square_height() - y_min;
 
-        // +1 to cut of border - todo fix sprite
+        // +1 to cut of border
         view.slice_mut(s!(
             (top + 1)..(top + theme.square_height()),
             (left + 1)..(left + theme.square_width())
@@ -489,9 +489,9 @@ fn render_diff(
 
         if nb > 0 {
             let mut text_color = theme.white_color();
-            let font_size = 38.0 + (if nb < 10 { 2.0 } else { 0.0 });
-            let x_offset = 69 + (if nb < 10 { 2 } else { 0 });
-            let y_offset = 65;
+            let font_size = 28.0 + (if nb < 10 { 2.0 } else { 0.0 });
+            let x_offset = 56;
+            let y_offset = 50 + (if nb > 10 { 2 } else { 0 });
             let scale = Scale {
                 x: font_size,
                 y: font_size,

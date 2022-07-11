@@ -35,8 +35,9 @@ PIECES_NAMES = {
 
 HAND_PIECES = ["pawn", "lance", "knight", "silver", "gold", "bishop", "rook"]
 
-SQUARE_WIDTH = 99
-SQUARE_HEIGHT = 108
+SCALE = 7
+SQUARE_WIDTH = 11 * SCALE
+SQUARE_HEIGHT = 12 * SCALE
 
 
 def make_sprite(f):
@@ -103,7 +104,7 @@ def make_sprite(f):
     ET.SubElement(svg, "circle", {
         "cx": str(SQUARE_WIDTH * 10 + SQUARE_WIDTH / 2),
         "cy": str(SQUARE_HEIGHT + SQUARE_HEIGHT / 2),
-        "r": str(7),
+        "r": str(5),
         "fill": "#000",
     })
 
