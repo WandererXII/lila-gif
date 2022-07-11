@@ -7,9 +7,9 @@ frame by frame.
 
 ![Example](/example.gif)
 
-| size    | frames | colors | width   | height  |
-| ------- | ------ | ------ | ------- | ------- |
-| 844 KiB | 101    | 63     | 1188 px | 1092 px |
+| size    | frames | colors | width  | height |
+| ------- | ------ | ------ | ------ | ------ |
+| 630 KiB | 101    | 63     | 924 px | 876 px |
 
 ## Usage
 
